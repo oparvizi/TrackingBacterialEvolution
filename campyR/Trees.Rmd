@@ -1,0 +1,379 @@
+---
+title: "Trees"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+##-------------------------------------------------------------------------------------
+## SplitsTree 5.3.0 – Compute Phylogenetic Networks 
+## Ref: https://uni-tuebingen.de/fakultaeten/mathematisch-naturwissenschaftliche-fakultaet/fachbereiche/informatik/lehrstuehle/algorithms-in-bioinformatics/software/splitstree/
+
+```{r, echo=FALSE}
+# Software for computing phylogenetic networks
+# Download link: https://software-ab.informatik.uni-tuebingen.de/download/splitstree4/welcome.html
+# Results of analysis can be import as image.
+```
+
+##Data Integration, Manipulation and Visualization of Phylogenetic Trees---------------------------------------------------
+## Ref: https://yulab-smu.top/treedata-book/chapter7.html
+```{r, echo=FALSE}
+#install.packages("ggimage")
+#install.packages("TDbook")
+require(ggimage)
+require(ggtree)
+require(TDbook)
+##Mapping Data to The tree Structure----------------------------------------
+# load `tree_boots`, `df_tip_data`, and `df_inode_data` from 'TDbook'
+p <- ggtree(tree_boots) %<+% df_tip_data + xlim(-.1, 4)
+p2 <- p + geom_tiplab(offset = .6, hjust = .5) +
+    geom_tippoint(aes(shape = trophic_habit, color = trophic_habit, 
+                size = mass_in_kg)) + 
+    theme(legend.position = "right") + 
+    scale_size_continuous(range = c(3, 10))
+
+p2 %<+% df_inode_data + 
+    geom_label(aes(label = vernacularName.y, fill = posterior)) + 
+    scale_fill_gradientn(colors = RColorBrewer::brewer.pal(3, "YlGnBu"))
+
+##Aligning Graph to the Tree Based on the Tree Structure----------------------
+require(ggtree)
+require(TDbook)
+require(treeio)
+
+## load `tree_nwk`, `df_info`, `df_alleles`, and `df_bar_data` from 'TDbook'
+tree <- tree_nwk
+snps <- df_alleles
+snps_strainCols <- snps[1,] 
+snps<-snps[-1,] # drop strain names
+colnames(snps) <- snps_strainCols
+
+gapChar <- "?"
+snp <- t(snps)
+lsnp <- apply(snp, 1, function(x) {
+        x != snp[1,] & x != gapChar & snp[1,] != gapChar
+    })
+lsnp <- as.data.frame(lsnp)
+lsnp$pos <- as.numeric(rownames(lsnp))
+lsnp <- tidyr::gather(lsnp, name, value, -pos)
+snp_data <- lsnp[lsnp$value, c("name", "pos")]
+
+## visualize the tree 
+p <- ggtree(tree) 
+
+## attach the sampling information data set 
+## and add symbols colored by location
+p <- p %<+% df_info + geom_tippoint(aes(color=location))
+
+## visualize SNP and Trait data using dot and bar charts,
+## and align them based on tree structure
+p + geom_facet(panel = "SNP", data = snp_data, geom = geom_point, 
+               mapping=aes(x = pos, color = location), shape = '|') +
+    geom_facet(panel = "Trait", data = df_bar_data, geom = geom_col, 
+                aes(x = dummy_bar_value, color = location, 
+                fill = location), orientation = 'y', width = .6) +
+    theme_tree2(legend.position=c(.05, .85))
+
+## Visualize a Tree with an Associated Matrix
+beast_file <- system.file("examples/MCC_FluA_H3.tree", package="ggtree")
+beast_tree <- read.beast(beast_file)
+
+genotype_file <- system.file("examples/Genotype.txt", package="ggtree")
+genotype <- read.table(genotype_file, sep="\t", stringsAsFactor=F)
+colnames(genotype) <- sub("\\.$", "", colnames(genotype))
+p <- ggtree(beast_tree, mrsd="2013-01-01") + 
+    geom_treescale(x=2008, y=1, offset=2) + 
+    geom_tiplab(size=2)
+gheatmap(p, genotype, offset=5, width=0.5, font.size=3, 
+        colnames_angle=-45, hjust=0) +
+    scale_fill_manual(breaks=c("HuH3N2", "pdm", "trig"), 
+        values=c("steelblue", "firebrick", "darkgreen"), name="genotype")
+
+p <- ggtree(beast_tree, mrsd="2013-01-01") + 
+    geom_tiplab(size=2, align=TRUE, linesize=.5) + 
+    theme_tree2()
+gheatmap(p, genotype, offset=8, width=0.6, 
+        colnames=FALSE, legend_title="genotype") +
+    scale_x_ggtree() + 
+    scale_y_continuous(expand=c(0, 0.3))
+
+##Visualize a tree with multiple associated matrices
+nwk <- system.file("extdata", "sample.nwk", package="treeio")
+
+tree <- read.tree(nwk)
+circ <- ggtree(tree, layout = "circular")
+
+df <- data.frame(first=c("a", "b", "a", "c", "d", "d", "a", 
+                        "b", "e", "e", "f", "c", "f"),
+                 second= c("z", "z", "z", "z", "y", "y", 
+                        "y", "y", "x", "x", "x", "a", "a"))
+rownames(df) <- tree$tip.label
+
+df2 <- as.data.frame(matrix(rnorm(39), ncol=3))
+rownames(df2) <- tree$tip.label
+colnames(df2) <- LETTERS[1:3]
+
+
+p1 <- gheatmap(circ, df, offset=.8, width=.2,
+               colnames_angle=95, colnames_offset_y = .25) +
+    scale_fill_viridis_d(option="D", name="discrete\nvalue")
+
+
+library(ggnewscale)
+p2 <- p1 + new_scale_fill()
+gheatmap(p2, df2, offset=15, width=.3,
+         colnames_angle=90, colnames_offset_y = .25) +
+    scale_fill_viridis_c(option="A", name="continuous\nvalue")
+
+## Visualize a Tree with Multiple Sequence Alignments------------------------
+library(TDbook)
+
+# load `tree_seq_nwk` and `AA_sequence` from 'TDbook'
+p <- ggtree(tree_seq_nwk) + geom_tiplab(size=3)
+msaplot(p, AA_sequence, offset=3, width=2)
+#A specific slice of the alignment can also be displayed by specifying the window parameter (Figure 7.5B)..
+
+p <- ggtree(tree_seq_nwk, layout='circular') + 
+    geom_tiplab(offset=4, align=TRUE) + xlim(NA, 12)
+msaplot(p, AA_sequence, window=c(120, 200))
+
+##Composite Plots-----------------------------------------------------------
+library(ggplot2)
+library(ggtree)
+
+set.seed(2019-10-31)
+tr <- rtree(10)
+
+d1 <- data.frame(
+    # only some labels match
+    label = c(tr$tip.label[sample(5, 5)], "A"),
+    value = sample(1:6, 6))
+
+d2 <- data.frame(
+    label = rep(tr$tip.label, 5),
+    category = rep(LETTERS[1:5], each=10),
+    value = rnorm(50, 0, 3)) 
+
+g <- ggtree(tr) + geom_tiplab(align=TRUE) + hexpand(.01)
+
+p1 <- ggplot(d1, aes(label, value)) + geom_col(aes(fill=label)) + 
+    geom_text(aes(label=label, y= value+.1)) +
+    coord_flip() + theme_tree2() + theme(legend.position='none')
+ 
+p2 <- ggplot(d2, aes(x=category, y=label)) + 
+    geom_tile(aes(fill=value)) + scale_fill_viridis_c() + 
+    theme_minimal() + xlab(NULL) + ylab(NULL)
+#library(cowplot)#using cowplot, the composite plots are not aligned properly
+#cowplot::plot_grid(g, p2, p1, ncol=3) 
+library(aplot)#all the subplots are aligned properly
+p2 %>% insert_left(g) %>% insert_right(p1, width=.5) 
+
+
+```
+
+
+##-------------------------------------------------------------------------------------
+## Plotting a tree with a grid of presence/absence geographic or etc.
+## Ref: http://blog.phytools.org/2018/02/plotting-tree-with-grid-of.html
+```{r, echo=FALSE}
+library(phytools)
+## regions A:L
+regions<-LETTERS[1:12]
+states<-vector()
+ind<-1
+for(i in 1:length(regions)){
+    states[ind]<-regions[i]
+    if(i!=length(regions)){
+        states[ind+1]<-paste(regions[i],"&",regions[i+1],sep="")
+        ind<-ind+2
+    }
+}
+Q<-matrix(0,length(states),length(states),dimnames=list(states,states))
+for(i in 1:(length(states)-1)){
+    Q[i,i+1]<-0.5
+    Q[i+1,i]<-0.5
+}
+tree<-pbtree(n=80,scale=60)
+x<-sim.Mk(tree,Q)
+X<-sapply(regions,function(r,x,zeros){
+    zeros[grep(r,x)]<-1
+    zeros },x=x,zeros=rep(0,Ntip(tree)))
+rownames(X)<-tree$tip.label
+
+tree<-reorder(tree,"cladewise")
+X<-X[tree$tip.label,]
+plotTree(tree,plot=FALSE)
+obj<-get("last_plot.phylo",envir=.PlotPhyloEnv)
+plotTree(tree,lwd=1,ylim=c(0,obj$y.lim[2]*1.05),xlim=c(0,obj$x.lim[2]*1.2),
+    ftype="off")
+obj<-get("last_plot.phylo",envir=.PlotPhyloEnv)
+h<-max(obj$xx)
+fsize<-0.6
+for(i in 1:Ntip(tree)){
+    lines(c(obj$xx[i],h),rep(obj$yy[i],2),lty="dotted")
+    text(h,obj$yy[i],tree$tip.label[i],cex=fsize,pos=4,font=3,offset=0.1)
+}
+s<-max(fsize*strwidth(tree$tip.label))
+start.x<-1.05*h+s
+cols<-setNames(c("white","blue"),0:1)
+for(i in 1:ncol(X)){
+    text(start.x,max(obj$yy)+1,paste("Region",colnames(X)[i]),pos=4,srt=90,
+        cex=0.7,offset=0)
+    for(j in 1:nrow(X)){
+        xy<-c(start.x,obj$yy[j])
+        y<-c(xy[2]-0.5,xy[2]+0.5,xy[2]+0.5,xy[2]-0.5)
+        asp<-(par()$usr[2]-par()$usr[1])/(par()$usr[4]-par()$usr[3])*
+            par()$pin[2]/par()$pin[1]
+        x<-c(xy[1]-0.5*asp,xy[1]-0.5*asp,xy[1]+0.5*asp,xy[1]+0.5*asp)
+        polygon(x,y,col=cols[as.character(X[j,i])])
+    }
+    start.x<-start.x+asp
+}
+
+
+```
+
+
+##-------------------------------------------------------------------------------------
+## Maximum Likelihood using function 'pml' in library 'phangorn'.
+## Ref: https://wiki.duke.edu/pages/viewpage.action?pageId=131172124
+
+```{r, echo=FALSE}
+library("phangorn")
+#Function 'pml' provides a way to compute the likelihood of the data given a phylogenetic tree and evolutionary model
+fit_treeUPGMA = pml(unroot(treeUPGMA), data=primates)
+fit_treeUPGMA_opt1 = optim.pml(fit_treeUPGMA)# without 'optNni=TRUE'
+layout(matrix(c(1,2)), height=c(1,1))
+par(mar = c(.1,.1,.1,.1))
+plot(fit_treeUPGMA, main="default branches", cex = 0.8)   # top = default branch lengths
+plot(fit_treeUPGMA_opt1, main="optimized branches", cex = 0.8)   # bottom = optimized branch lengths
+AIC(fit_treeUPGMA, fit_treeUPGMA_opt1)
+
+fit_treeUPGMA_opt2 = optim.pml(fit_treeUPGMA, optNni=TRUE) #optNni=TRUE
+layout(matrix(c(1,2)), height=c(1,1))
+plot(fit_treeUPGMA_opt1, cex = 0.8)  # top = original topology with optimized branch lengths
+plot(fit_treeUPGMA_opt2, cex = 0.8)    # bottom = optimized topology AND branch lengths
+AIC(fit_treeUPGMA_opt1, fit_treeUPGMA_opt2)
+
+```
+
+##-------------------------------------------------------------------------------------
+## Estimating phylogenetic trees with Phangorn-----------------------------------------
+## Ref: https://cran.r-project.org/web/packages/phangorn/vignettes/Trees.html
+```{r, echo=FALSE}
+#install.packages("phangorn")
+require(ape)
+require(phangorn)
+fdir <- system.file("extdata/trees", package = "phangorn")
+primates <- read.phyDat(file.path(fdir, "primates.dna"),
+                        format = "interleaved")
+dm  <- dist.ml(primates)
+treeUPGMA  <- upgma(dm)
+treeNJ  <- NJ(dm)
+plot(treeUPGMA, main="UPGMA")
+## Rooted UPGMA tree.------------------------------------
+plot(treeNJ, "unrooted", main="NJ")
+## Unrooted NJ tree.-------------------------------------
+plot(treeNJ, "unrooted", main="NJ")
+## Bootstrap---------------------------------------------
+fun <- function(x) upgma(dist.ml(x))
+bs_upgma <- bootstrap.phyDat(primates,  fun)
+#bs_upgma <- bootstrap.phyDat(primates,  \(x){dist.ml(x) |> upgma}) #alternative 
+plotBS(treeUPGMA, bs_upgma, main="UPGMA")
+## parsimony --------------------------------------------
+parsimony(treeUPGMA, primates) #parsimony score
+parsimony(treeNJ, primates) #parsimony score
+# Create a bootstrap data se
+treeRatchet  <- pratchet(primates, trace = 0, minit=100)
+parsimony(treeRatchet, primates)
+treeRatchet  <- acctran(treeRatchet, primates)
+#prune away internal edges of length
+treeRatchet  <- di2multi(treeRatchet)
+#Some trees might have differed only between edges of length 0.
+if(inherits(treeRatchet, "multiPhylo")){
+  treeRatchet <- unique(treeRatchet)
+}
+#create tree
+plotBS(midpoint(treeRatchet), type="phylogram")
+add.scale.bar()
+##Note: If treeRatchet is a list of trees, i.e. an object of class multiPhylo, we can subset the i-th trees with treeRatchet[[i]].
+
+# function optim.parsimony performs tree rearrangements to find trees with a lower parsimony score.
+treeRA <- random.addition(primates)
+treeSPR  <- optim.parsimony(treeRA, primates)
+parsimony(c(treeRA, treeSPR), primates)
+
+## Maximum likelihood---------------------------------------
+fit <- pml(treeNJ, data=primates)
+fit
+fitJC  <- optim.pml(fit, rearrangement="NNI")
+logLik(fitJC)
+fitF81 <- update(fitJC, k=4, inv=0.2, bf=baseFreq(primates))
+fitF81
+
+```
+
+##Import two tree against each other---------------------------------------------------
+##Ref: https://cran.r-project.org/web/packages/phylogram/vignettes/phylogram-vignette.html
+```{r, echo=FALSE}
+#install.packages("phylogram")
+#install.packages("zoo")
+# (!require("BiocManager", quietly = TRUE))
+#   install.packages("BiocManager")
+#BiocManager::install("dendextend")
+require(ape)
+require(dendextend)
+require(phylogram)
+data(woodmouse)
+## generate distance matrices for each section of the alignment
+dist1 <- dist.dna(woodmouse[, 1:482])
+dist2 <- dist.dna(woodmouse[, 483:965])
+## build neighbor-joining trees
+phy1 <- nj(dist1)
+phy2 <- nj(dist2)
+## root with No0912S as outgroup
+phy1 <- root(phy1, "No0912S")
+phy2 <- root(phy2, "No0912S")
+## convert phylo objects to dendrograms
+dnd1 <- as.dendrogram(phy1)
+dnd2 <- as.dendrogram(phy2)
+## rearrange in ladderized fashion
+dnd1 <- ladder(dnd1)
+dnd2 <- ladder(dnd2)
+## plot the tanglegram
+dndlist <- dendextend::dendlist(dnd1, dnd2)
+dendextend::tanglegram(dndlist, fast = TRUE, margin_inner = 5)
+
+```
+
+
+
+```{r, echo=FALSE}
+
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+```{r, echo=FALSE}
+
+```
+
+```{r, echo=FALSE}
+
+```
+
+```{r, echo=FALSE}
+
+```
+
+```{r, echo=FALSE}
+
+```
