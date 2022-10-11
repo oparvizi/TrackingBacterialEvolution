@@ -1,0 +1,465 @@
+---
+title: "CampyR"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+##--------------------------------------------------------------
+##--------------------------------------------------------------
+## RShiny App---------------------------------------------------
+
+
+## Install the libraries and tools------------------------------
+```{r}
+#install.packages(c("rio","ape","lubridate","tidyr","dplyr","ggplot","ggmap","RColorBrewer","dygraphs","xts","leaflet", "shiny", "shinythemes", "readr", "shinydashboard"))
+#if (!require("BiocManager", quietly = TRUE))
+#   install.packages("BiocManager")
+#BiocManager::install("ggtree")
+```
+
+##  load the libraries and tools--------------------------------
+```{r, echo=FALSE}
+my_packages<-c("ape","ggtree","ggplot2","lubridate","tidyr","dplyr","ggmap","RColorBrewer", "dygraphs","xts","leaflet","shiny","shinythemes","readr", "shinydashboard")
+lapply(my_packages, require, character.only = TRUE)
+library(rio)
+library(ape)
+library(ggtree)
+library(ggplot2)
+library(lubridate)
+library(tidyr)
+library(dplyr)
+library(ggmap)
+library(RColorBrewer)
+library(dygraphs)
+library(xts)
+library(leaflet)
+library(ggtree)
+library(shiny)
+library(shinythemes)
+library(readr)
+library(shinydashboard)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+## Load data---------------------------------------------------
+
+```{r, echo=FALSE}
+##metadata_campy converted to .RSD from PubMLST metadata_campy in Excel format
+#install.packages("rio")
+require(rio)
+metadata_campy <- import("\\\\intern.fli.bund.local/JE/Homelaufwerke/omid.parvizi/Desktop-PC/campyR/genCom.xlsx")
+export(metadata_campy, "\\\\intern.fli.bund.local/JE/Homelaufwerke/omid.parvizi/Desktop-PC/campyR/genCom.rds")
+```
+
+```{r, echo=FALSE}
+library(ape)
+library(ggtree)
+library(lubridate)
+myTree <- read.nexus("\\\\intern.fli.bund.local/JE/Homelaufwerke/omid.parvizi/Desktop-PC/campyR/genCom.tree") #this will read it into a class called phylo
+
+# theses trees can be saved, and don't have to be recomputed when the app starts (saves time!)
+saveRDS(file="\\\\intern.fli.bund.local/JE/Homelaufwerke/omid.parvizi/Desktop-PC/campyR/data/root.genCom.RDS",ggtree(myTree))
+saveRDS(file="\\\\intern.fli.bund.local/JE/Homelaufwerke/omid.parvizi/Desktop-PC/campyR/data/circ.genCom.tree.RDS",ggtree(myTree,layout="circular"))
+#saveRDS(file="\\\\intern.fli.bund.local/JE/Homelaufwerke/omid.parvizi/Desktop-PC/campyR/data/unroo.genCom.tree.RDS",ggtree(myTree,layout="unrooted"))
+```
+
+```{r, echo=FALSE}
+require(ape)
+require(ggtree)
+tree<-NULL
+#setting up the colours for the different countries------------
+colVals<-c("#ff0000","#00ff00","#0000ff",NA)
+countryCol<-data.frame(colVals=colVals,ord=c("?","UK","SE",""))
+pal<-colorFactor(colVals[1:3], domain = c("UK","SE")) #leaflet
+
+## Load Tree---------------------------------------------------
+#myTree <- read.nexus("\\\\intern.fli.bund.local/JE/Homelaufwerke/omid.parvizi/Desktop-PC/campyR/genCom.tree") 
+myTree <- read.nexus("\\\\intern.fli.bund.local/JE/Homelaufwerke/omid.parvizi/Desktop-PC/campyR/genCom.tree")
+tree<-ggtree(myTree)
+## FUNCTION COLOR TREETIPE-------------------------------------
+colorTreeTip = function(tree,metadata_campy,var) {
+  tree<-tree %<+% metadata_campy + geom_tippoint(aes_string(color=var),size=5, alpha=0.35) + theme(legend.position="right")
+  if(var %in% c("country")){
+    #the drop=FALSE is necessary to maintain a consistent colour scale across several
+    #visualizations. This will be important in the shiny application
+    tree<-tree + scale_color_manual(values=as.character(countryCol$colVals),drop=FALSE)
+  }
+  tree #return the 
+}
+
+## Annotation the phylogenetic tree with Country---------------
+tree<-colorTreeTip(tree,metadata_campy,"country")
+tree
+```
+
+```{r, echo=FALSE}
+## Annotation the phylogenetic tree with Region----------------
+tree<-ggtree(myTree)
+tree<-colorTreeTip(tree,metadata_campy,"region")
+tree
+```
+
+## Visualization of number cases per country-------------------
+```{r, echo=FALSE}
+# Count number cases per country
+aggDat<-metadata_campy %>%
+       filter(country !="?") %>%
+       group_by(country,country_lon,country_lat) %>%
+       dplyr::count()%>%
+       mutate(popup=sprintf("%s = %d cases",country,n)) #create a popup for the map
+# Here's a very quick look at what this command generates for us:
+aggDat
+
+```
+
+## Visualisation of number cases (by country) on the map-------
+```{r, echo=FALSE}
+require(leaflet)
+# create the Map using leaflet
+m<-leaflet(aggDat)
+  m %>%
+        addTiles()%>% 
+        addCircleMarkers(
+          lng=~country_lon,
+          lat= ~country_lat,
+          radius=~sqrt(n)*2,
+          color = ~pal(country),
+          stroke = FALSE, fillOpacity = 0.7,
+          label=~as.character(popup),
+          labelOptions = labelOptions(noHide = T),
+          options = leafletOptions(minZoom = 0, maxZoom = 10,scroolWheelZoom=FALSE))
+ 
+```
+
+## ## Visualisation of number cases (by region) on the map-----
+```{r, echo=FALSE}
+require(leaflet) 
+aggDat<-metadata_campy %>%
+        filter(country !="?") %>%
+        group_by(country,region,region_lon,region_lat) %>%
+        dplyr::count()%>% 
+        mutate(popup=sprintf("%s (%s) = %d cases",region,country,n))
+
+m<-leaflet(aggDat)
+  m %>%
+        addTiles()%>% 
+        addCircleMarkers(
+          lng=~region_lon,
+          lat= ~region_lat,
+          radius=~sqrt(n)*2,
+          color = ~pal(country), #Search for the palette name in RColorBrewer and return it if found.
+          stroke = FALSE, fillOpacity = 0.7,
+          label=~as.character(popup),
+          labelOptions = labelOptions(noHide = F)
+  )
+```
+
+## ## ## Visualisation of number cases (by cluster) on the map--
+```{r, echo=FALSE}
+require(leaflet)
+m<-leaflet(metadata_campy) 
+# Providing the GPS co-ordinates allows clustering of regional samples.
+  m %>%
+        addTiles()%>%
+        addCircleMarkers(
+          lng=~region_lon,
+          lat= ~region_lat,
+          stroke = FALSE, fillOpacity = 0.5,
+          clusterOptions= markerClusterOptions(titile="regional clusters") #cluster options
+  )
+
+```
+
+## Create Timeline----------------------------------------------
+```{r, echo=FALSE}
+YearMonth<-NULL
+timeseriesData<-metadata_campy %>% 
+      filter(yearMonth !="?") %>%
+      mutate(YearMonth=ymd(sapply(yearMonth,function(x){paste(x,"01",sep="-")}))) %>% 
+      group_by(YearMonth) %>%
+      dplyr::count(country) %>% 
+      complete(YearMonth,country) %>% #make sure that all dates are represented
+      mutate(n=replace(n,is.na(n),0)) #turn NAs from above command in zeros
+```
+
+## create an xts object-----------------------------------------
+```{r, echo=FALSE}
+require(xts)
+xtsObj<-c()
+  for(i in unique(timeseriesData$country)){
+    temp<-timeseriesData %>%
+      filter(country == i)
+    xtsObj<-cbind(xtsObj,xts(temp$n, temp$YearMonth))
+  }
+#name out object, so that it plots the time series correctly
+colnames(xtsObj)<-unique(timeseriesData$country)
+```
+
+```{r, echo=FALSE}
+ #now make the the dygraph (yay!)
+dygraph(xtsObj) %>% 
+  dyOptions(stackedGraph = TRUE,colors = countryCol$colVals) %>%
+  dyRangeSelector(fillColor="#c97f91",strokeColor="#c97f91")
+```
+
+## Simple User Interface----------------------------------------
+```{r, echo=FALSE}
+require(shiny)
+require(shinydashboard)
+require(leaflet)
+require(dygraphs)
+ui<-dashboardPage(skin = "black",
+  dashboardHeader(title = "Shiny Dashboard"),
+  dashboardSidebar(
+    h3("Tree Options"),
+    radioButtons(inputId="treeLayout","Layout",
+                      choices=c("Rectanular"="rec",
+                        "Circular"="circ"),
+                      selected="rec"),
+    selectizeInput(inputId="colorBy",
+                   label="Color By",
+                   choices=c("date","country","region"),
+                   multiple=FALSE,
+                   selected="region")
+  ),
+  dashboardBody(
+    tags$head(
+ #     tags$link(rel = "stylesheet", type = "text/css", href = "custom.css")
+    ),
+    box(title="Phylogenic Tree",
+        width=6,
+        plotOutput("treePlot",
+        brush = "plot_brush")#,
+        #verbatimTextOutput("info")
+        ),
+    box(title="Geographic Coordinate",
+        leafletOutput("caseMap"),
+        width=6),
+    
+    box(title="Timeline",
+        dygraphOutput("timeline"),
+        width=12),
+  )
+)
+
+```
+
+
+## some more option from server.R -----------------------------
+```{r, echo=FALSE}
+
+# This is the server logic for a Shiny web application.
+require(ape)
+require(ggtree)
+require(lubridate)
+require(tidyr)
+require(dplyr)
+require(ggmap)
+require(RColorBrewer)
+require(dygraphs)
+require(xts)
+require(leaflet)
+
+#source("\\\\intern.fli.bund.local/JE/Homelaufwerke/omid.parvizi/Desktop-PC/campyR/serverUtility.R") #Load function colorTreeTip
+
+
+server<-function(input, output) {
+  
+  ##### REACTIVE VARIABLES
+  # metadata variable that changes reactive according to the
+  # timeline date range
+  metadataReactive <- reactive({
+    startDate<-input$timeline_date_window[[1]]
+    endDate<-input$timeline_date_window[[2]]
+    
+    if(is.null(startDate)){
+      metadata_campy 
+    }else{
+      metadata_campy %>% filter(date>=startDate & date <= endDate)
+    }
+  })
+
+  ##### VISUALIZATIONS
+  ##--------------------------------------------------------------------
+  # PHYLOGENETIC TREEE
+  
+  output$treePlot <- renderPlot({
+    
+    # Load trees that have already been stored.
+    # The alternative can be re-compute tree each time.
+
+    tree<-readRDS("\\\\intern.fli.bund.local/JE/Homelaufwerke/omid.parvizi/Desktop-PC/campyR/data/root.genCom.RDS")  # default is rooted tree
+
+    if(input$treeLayout=="circ"){
+      tree<-read.nexus("\\\\intern.fli.bund.local/JE/Homelaufwerke/omid.parvizi/Desktop-PC/campyR/data/circ.genCom.tree.RDS") #alternative
+      tree<- tree + 
+       xlim(e$xmin,e$xmax) +
+        ylim(e$ymin,e$ymax)
+      tree
+    }
+    ## Adaptation old package for new R version.   
+    tree$theme <- ggplot2::theme_minimal()
+    
+    #metadata is available as a global variable.
+    colTreeMeta<-metadata_campy[,c("id","country","region","date")]
+    colTreeMeta$country<-factor(colTreeMeta$country,levels=c(levels(colTreeMeta$country),"")) #Command to avoid a ggtree error
+    
+    temp<-metadataReactive()
+    colTreeMeta<-colTreeMeta %>%
+      mutate(country = replace(country,!(id %in% temp$id),""))
+    
+    tree<-colorTreeTip(tree,colTreeMeta,input$colorBy)
+  
+    #Works - but buggy brushing interaction
+    if(!is.null(input$plot_brush) & input$treeLayout == "rec"){
+      e<-input$plot_brush
+      tree<- tree + 
+        xlim(e$xmin,e$xmax) +
+        ylim(e$ymin,e$ymax)
+    }
+    
+    #return the tree
+    tree
+  })
+  
+
+  ##-----------------------------------------------------------------------
+  # Little bit of testing code that shows what is being clicked on in the phylogenetic tree
+  #
+  output$info <- renderText({
+    xy_str <- function(e) {
+      if(is.null(e)) return("NULL\n")
+      paste0("x=", round(e$x, 1), " y=", round(e$y, 1), "\n")
+    }
+    xy_range_str <- function(e) {
+      if(is.null(e)) return("NULL\n")
+      paste0("xmin=", round(e$xmin, 1), " xmax=", round(e$xmax, 1), 
+             " ymin=", round(e$ymin, 1), " ymax=", round(e$ymax, 1))
+    }
+    
+    paste0(
+      "click: ", xy_str(input$plot_click),
+      "dblclick: ", xy_str(input$plot_dblclick),
+      "hover: ", xy_str(input$plot_hover),
+      "brush: ", xy_range_str(input$plot_brush)
+    )
+  })
+  
+  ##----------------------------------------------------------------------
+  # Map that shows case counts
+  #
+  output$caseMap<-renderLeaflet({
+     m<-NULL
+    
+    if(input$colorBy=="country" | input$colorBy=="date"){
+      #pal<-colorFactor(brewer.pal(name="Set1",3), domain = c("UK","SE",))
+    
+      aggDat<-metadataReactive() %>%
+        filter(country !="?") %>%
+        group_by(country,country_lon,country_lat) %>%
+        dplyr::count()%>% 
+        mutate(popup=sprintf("%s = %d cases",country,n))
+      
+      m<-leaflet(aggDat) 
+      
+      m %>%
+        addTiles()%>% 
+        addCircleMarkers(
+          lng=~country_lon,
+          lat= ~country_lat,
+          radius=~sqrt(n)*2,
+          color = ~pal(country),
+          stroke = FALSE, fillOpacity = 0.7,
+          label=~as.character(popup),
+          labelOptions = labelOptions(noHide = T)
+        )
+    }else if(input$colorBy=="region"){
+      #this option here lets me have clusters instead,
+      # m<-leaflet(metadata) 
+       
+      # m %>%
+      #   addTiles()%>%
+      #   addCircleMarkers(
+      #     lng=~region_lon,
+      #     lat= ~region_lat,
+      #     stroke = FALSE, fillOpacity = 0.5,
+      #     clusterOptions= markerClusterOptions(titile="region")
+      #   )
+      
+     # pal<-colorFactor(brewer.pal(name="Set1",3), domain = c("UK", "SE"))
+      
+      aggDat<-metadataReactive() %>%
+        filter(country !="?") %>%
+        group_by(country,region,region_lon,region_lat) %>%
+        dplyr::count()%>% 
+        mutate(popup=sprintf("%s (%s) = %d cases",region,country,n))
+      
+      m<-leaflet(aggDat)
+      
+      m %>%
+        addTiles()%>% 
+        addCircleMarkers(
+          lng=~region_lon,
+          lat= ~region_lat,
+          radius=~sqrt(n)*2,
+          color = ~pal(country),
+          stroke = FALSE, fillOpacity = 0.7,
+          label=~as.character(popup),
+          labelOptions = labelOptions(noHide = F)
+        )
+    }
+    
+  })
+
+  ##------------------------------------------------------------------
+  # Timeline
+  #
+  output$timeline<-renderDygraph({
+    ######
+    # To create the dygraph, first generate a xts series for *each* of the countries.
+    #count cases by date, it's also aggregatge by *month* so we're going to 
+    #create a new time variable
+    timeseriesData<-metadata_campy %>%
+      mutate(YearMonth=ymd(sapply(yearMonth,function(x){paste(x,"01",sep="-")}))) %>% 
+      group_by(YearMonth)%>% 
+      dplyr::count(country) %>%
+      complete(YearMonth,country) %>% #make sure that all dates are represented
+      mutate(n=replace(n,is.na(n),0)) #turn NAs from above command in zeros
+    
+    #create an xts object
+    xtsObj<-c()
+    for(i in unique(timeseriesData$country)){
+      temp<-timeseriesData %>%
+        filter(country == i)
+      
+      xtsObj<-cbind(xtsObj,xts(temp$n, temp$YearMonth))
+    }
+    
+    #name out object, so that it plots the time series correctly
+    colnames(xtsObj)<-unique(timeseriesData$country)
+
+    #now make the the dygraph (yay!)
+      dygraph(xtsObj,height=200) %>% 
+      dyOptions(stackedGraph = TRUE,colors = countryCol$colVals) %>% 
+      dyRangeSelector(fillColor="#c97f91",strokeColor="#c97f91")
+  })
+}
+
+```
+
+```{r, echo=FALSE}
+shinyApp(ui, server)
+```
+
+
+
