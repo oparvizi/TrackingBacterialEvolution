@@ -1,6 +1,7 @@
 ---
 title: "CampyR"
 output: html_document
+Source: http://rstudio-pubs-static.s3.amazonaws.com/272983_aaed6ef007a94bdc98d5fb139e7c8ece.html#
 ---
 
 ```{r setup, include=FALSE}
@@ -15,7 +16,7 @@ When you click the **Knit** button a document will be generated that includes bo
 
 ##--------------------------------------------------------------
 ##--------------------------------------------------------------
-## RShiny App---------------------------------------------------
+## RShiny App for Tracking Bacterial Evolution------------------
 
 
 ## Install the libraries and tools------------------------------
@@ -57,20 +58,20 @@ Note that the `echo = FALSE` parameter was added to the code chunk to prevent pr
 ##metadata_campy converted to .RSD from PubMLST metadata_campy in Excel format
 #install.packages("rio")
 require(rio)
-metadata_campy <- import("\\\\intern.fli.bund.local/JE/Homelaufwerke/omid.parvizi/Desktop-PC/campyR/genCom.xlsx")
-export(metadata_campy, "\\\\intern.fli.bund.local/JE/Homelaufwerke/omid.parvizi/Desktop-PC/campyR/genCom.rds")
+metadata_campy <- import("PATH.../campyR/genCom.xlsx")
+export(metadata_campy, "PATH.../campyR/genCom.rds")
 ```
 
 ```{r, echo=FALSE}
 library(ape)
 library(ggtree)
 library(lubridate)
-myTree <- read.nexus("\\\\intern.fli.bund.local/JE/Homelaufwerke/omid.parvizi/Desktop-PC/campyR/genCom.tree") #this will read it into a class called phylo
+myTree <- read.nexus("PATH.../campyR/genCom.tree") #this will read it into a class called phylo
 
 # theses trees can be saved, and don't have to be recomputed when the app starts (saves time!)
-saveRDS(file="\\\\intern.fli.bund.local/JE/Homelaufwerke/omid.parvizi/Desktop-PC/campyR/data/root.genCom.RDS",ggtree(myTree))
-saveRDS(file="\\\\intern.fli.bund.local/JE/Homelaufwerke/omid.parvizi/Desktop-PC/campyR/data/circ.genCom.tree.RDS",ggtree(myTree,layout="circular"))
-#saveRDS(file="\\\\intern.fli.bund.local/JE/Homelaufwerke/omid.parvizi/Desktop-PC/campyR/data/unroo.genCom.tree.RDS",ggtree(myTree,layout="unrooted"))
+saveRDS(file="PATH.../campyR/data/root.genCom.RDS",ggtree(myTree))
+saveRDS(file="PATH.../campyR/data/circ.genCom.tree.RDS",ggtree(myTree,layout="circular"))
+#saveRDS(file="PATH.../campyR/data/unroo.genCom.tree.RDS",ggtree(myTree,layout="unrooted"))
 ```
 
 ```{r, echo=FALSE}
@@ -83,8 +84,8 @@ countryCol<-data.frame(colVals=colVals,ord=c("?","UK","SE",""))
 pal<-colorFactor(colVals[1:3], domain = c("UK","SE")) #leaflet
 
 ## Load Tree---------------------------------------------------
-#myTree <- read.nexus("\\\\intern.fli.bund.local/JE/Homelaufwerke/omid.parvizi/Desktop-PC/campyR/genCom.tree") 
-myTree <- read.nexus("\\\\intern.fli.bund.local/JE/Homelaufwerke/omid.parvizi/Desktop-PC/campyR/genCom.tree")
+#myTree <- read.nexus("PATH.../campyR/genCom.tree") 
+myTree <- read.nexus("PATH.../campyR/genCom.tree")
 tree<-ggtree(myTree)
 ## FUNCTION COLOR TREETIPE-------------------------------------
 colorTreeTip = function(tree,metadata_campy,var) {
@@ -270,7 +271,7 @@ require(dygraphs)
 require(xts)
 require(leaflet)
 
-#source("\\\\intern.fli.bund.local/JE/Homelaufwerke/omid.parvizi/Desktop-PC/campyR/serverUtility.R") #Load function colorTreeTip
+#source("PATH.../campyR/serverUtility.R") #Load function colorTreeTip: Please visit the original website if it needs to be used.
 
 
 server<-function(input, output) {
@@ -298,10 +299,10 @@ server<-function(input, output) {
     # Load trees that have already been stored.
     # The alternative can be re-compute tree each time.
 
-    tree<-readRDS("\\\\intern.fli.bund.local/JE/Homelaufwerke/omid.parvizi/Desktop-PC/campyR/data/root.genCom.RDS")  # default is rooted tree
+    tree<-readRDS("PATH.../campyR/data/root.genCom.RDS")  # default is rooted tree
 
     if(input$treeLayout=="circ"){
-      tree<-read.nexus("\\\\intern.fli.bund.local/JE/Homelaufwerke/omid.parvizi/Desktop-PC/campyR/data/circ.genCom.tree.RDS") #alternative
+      tree<-read.nexus("PATH.../campyR/data/circ.genCom.tree.RDS") #alternative
       tree<- tree + 
        xlim(e$xmin,e$xmax) +
         ylim(e$ymin,e$ymax)
