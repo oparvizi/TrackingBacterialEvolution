@@ -1,0 +1,329 @@
+---
+title: "BuildingTree"
+output: html_document
+date: "2022-11-16"
+Source: https://brouwern.github.io/lbrb/worked-example-building-a-phylogeny-in-r.html
+Chapter 18 “Worked example: Building a phylogeny in R”
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+# Install necessary packages
+```{r}
+## CRAN PACKAGES
+# downloaded using install.packages()
+# install.packages("rentrez",dependencies = TRUE)
+# install.packages("devtools")
+# install.packages("ape")
+# install.packages("seqinr")
+
+### BiocManager - CRAN package to download 
+##### Bioconductor packages
+# requires BiocManager
+# install.packages("BiocManager")
+
+## BioConductor packages
+### downloaded with BiocManager::install(), NOT install.packages()
+# BiocManager::install("msa")
+# BiocManager::install("Biostrings")
+
+
+## GitHub packages
+### requires devtools package and its function install_github()
+# library(devtools)
+# devtools::install_github("brouwern/compbio4all")
+# devtools::install_github("YuLab-SMU/ggmsa")
+```
+
+## Load packages into memory
+```{r, echo=FALSE}
+# github packages
+library(compbio4all)
+library(ggmsa)
+
+# CRAN packages
+library(rentrez)
+library(seqinr)
+library(ape)
+
+# Bioconductor packages
+## msa
+### The msa package is having problems on some platforms
+### You can skip the msa steps if necessary.  The msa output
+### is used to make a distance matrix and then phylogenetics trees,
+### but I provide code to build the matrix by hand so
+### you can proceed even if msa doesn't work for you.
+library(msa)
+
+## Biostrings
+library(Biostrings)
+```
+
+# Downloading macro-molecular sequences
+```{r, echo=FALSE}
+# Human shroom 3 (H. sapiens)
+hShroom3 <- rentrez::entrez_fetch(db = "protein", 
+                          id = "NP_065910", 
+                          rettype = "fasta")
+cat(hShroom3)
+nchar(hShroom3) #counts of the number of characters
+
+# Human shroom 2 (H. sapiens)
+hShroom2 <- entrez_fetch(db = "protein", 
+                          id = "CAA58534", 
+                          rettype = "fasta")
+cat(hShroom2)
+nchar(hShroom2) #counts of the number of characters
+
+# Sea-urchin shroom
+sShroom <- entrez_fetch(db = "protein", 
+                          id = "XP_783573", 
+                          rettype = "fasta")
+cat(sShroom)
+nchar(sShroom) #counts of the number of characters
+```
+
+# Prepping macromolecular sequences
+```{r, echo=FALSE}
+# function uses regular expressions to remove the info we don’t need.
+fasta_cleaner <- function(fasta_object, parse = TRUE){
+
+  fasta_object <- sub("^(>)(.*?)(\\n)(.*)(\\n\\n)","\\4",fasta_object)
+  fasta_object <- gsub("\n", "", fasta_object)
+
+  if(parse == TRUE){
+    fasta_object <- stringr::str_split(fasta_object,
+                                       pattern = "",
+                                       simplify = FALSE)
+  }
+
+  return(fasta_object[[1]])
+}
+
+hShroom3  <- fasta_cleaner(hShroom3,  parse = F)
+hShroom3
+mShroom3a <- fasta_cleaner(mShroom3a, parse = F)
+mShroom3a
+hShroom2  <- fasta_cleaner(hShroom2,  parse = F)
+hShroom2
+sShroom   <- fasta_cleaner(sShroom,   parse = F)
+sShroom
+```
+
+# Aligning sequences (Global Pairwise Alignments)
+```{r, echo=FALSE}
+#  global alignment
+align.h3.vs.h2  <- Biostrings::pairwiseAlignment(
+                  hShroom3,
+                  hShroom2)
+align.h3.vs.h2 
+score(align.h3.vs.h2 ) #how closely they are aligned
+Biostrings::pid(align.h3.vs.h2) #percent sequence identity
+```
+
+
+```{r, echo=FALSE}
+shroom_table <- c("CAA78718" , "X. laevis Apx" ,         "xShroom1",
+                  "NP_597713" , "H. sapiens APXL2" ,     "hShroom1",
+                  "CAA58534" , "H. sapiens APXL",        "hShroom2",
+                  "ABD19518" , "M. musculus Apxl" ,      "mShroom2",
+                  "AAF13269" , "M. musculus ShroomL" ,   "mShroom3a",
+                  "AAF13270" , "M. musculus ShroomS" ,   "mShroom3b",
+                  "NP_065910", "H. sapiens Shroom" ,     "hShroom3",
+                  "ABD59319" , "X. laevis Shroom-like",  "xShroom3",
+                  "NP_065768", "H. sapiens KIAA1202" ,   "hShroom4a",
+                  "AAK95579" , "H. sapiens SHAP-A" ,     "hShroom4b",
+                 #"DQ435686" , "M. musculus KIAA1202" ,  "mShroom4",
+                  "ABA81834" , "D. melanogaster Shroom", "dmShroom",
+                  "EAA12598" , "A. gambiae Shroom",      "agShroom",
+                  "XP_392427" , "A. mellifera Shroom" ,  "amShroom",
+                  "XP_783573" , "S. purpuratus Shroom" , "spShroom") #sea urchin
+is(shroom_table)
+class(shroom_table)
+length(shroom_table)
+
+# convert the vector to matrix using matrix()
+shroom_table_matrix <- matrix(shroom_table,
+                                  byrow = T,
+                                  nrow = 14)
+
+# convert the matrix to a dataframe using data.frame()
+shroom_table <- data.frame(shroom_table_matrix, 
+                     stringsAsFactors = F)
+
+# name columns of dataframe using names() function
+names(shroom_table) <- c("accession", "name.orig","name.new")
+
+# Create simplified species names
+## access species column using $ notation
+shroom_table$spp <- "Homo"
+shroom_table$spp[grep("laevis",shroom_table$name.orig)] <- "Xenopus"
+shroom_table$spp[grep("musculus",shroom_table$name.orig)] <- "Mus"
+shroom_table$spp[grep("melanogaster",shroom_table$name.orig)] <- "Drosophila"
+shroom_table$spp[grep("gambiae",shroom_table$name.orig)] <- "mosquito"
+shroom_table$spp[grep("mellifera",shroom_table$name.orig)] <- "bee"
+shroom_table$spp[grep("purpuratus",shroom_table$name.orig)] <- "sea urchin"
+shroom_table
+```
+
+# Downloading multiple sequences
+```{r, echo=FALSE}
+shroom_table$accession #download several sequences
+
+shrooms <- entrez_fetch(db = "protein", 
+                          id = shroom_table$accession, 
+                          rettype = "fasta")
+cat(shrooms)
+```
+
+# Download all of the sequences using a function from compbio4all called entrez_fetch_list()
+```{r, echo=FALSE}
+entrez_fetch_list <- function(db, id, rettype, ...){
+
+  #setup list for storing output
+  n.seq <- length(id)
+  list.output <- as.list(rep(NA, n.seq))
+  names(list.output) <- id
+
+  # get output
+  for(i in 1:length(id)){
+    list.output[[i]] <- rentrez::entrez_fetch(db = db,
+                                              id = id[i],
+                                              rettype = rettype)
+  }
+  return(list.output)
+}
+# download a bunch of FASTA files and store them in an R list.
+shrooms_list <- entrez_fetch_list(db = "protein", 
+                          id = shroom_table$accession, 
+                          rettype = "fasta")
+length(shrooms_list)
+shrooms_list[[1]]
+
+# clean list of sequences
+for(i in 1:length(shrooms_list)){
+  shrooms_list[[i]] <- fasta_cleaner(shrooms_list[[i]], parse = F)
+}
+shrooms_list[[1]]
+
+shrooms_vector <- rep(NA, length(shrooms_list)) # vector to store stuff
+shrooms_vector
+# run the loop
+for(i in 1:length(shrooms_vector)){
+  shrooms_vector[i] <- shrooms_list[[i]]
+}
+shrooms_vector[[2]] 
+
+# name the vector
+names(shrooms_vector) <- names(shrooms_list)
+# convert named vector to a string set
+shrooms_vector_ss <- Biostrings::AAStringSet(shrooms_vector)
+shrooms_vector_ss
+```
+
+# Multiple sequence alignment
+```{r, echo=FALSE}
+shrooms_align <- msa(shrooms_vector_ss,
+                     method = "ClustalW")
+
+class(shrooms_align)
+is(shrooms_align)
+shrooms_align
+
+class(shrooms_align) <- "AAMultipleAlignment" # change the class of an object.
+
+# convert msa object from shrooms_align to shrooms_align_seqinr 
+shrooms_align_seqinr <- msaConvert(shrooms_align, 
+                                   type = "seqinr::alignment")
+# display the msa
+compbio4all::print_msa(alignment = shrooms_align_seqinr, 
+          chunksize = 60)
+
+#### Displaying an MSA as an R plot
+
+# key step - must have class set properly
+class(shrooms_align) <- "AAMultipleAlignment"
+
+# run ggmsa
+ggmsa::ggmsa(shrooms_align,   # shrooms_align, NOT shrooms_align_seqinr
+      start = 2000, 
+      end = 2100) 
+```
+
+# Multiple sequence alignment of a subset of sequences
+```{r, echo=FALSE}
+names(shrooms_vector_ss) #  names of our genes listed
+names.focal <- c("XP_392427","EAA12598","ABA81834","XP_783573","CAA78718") # elect the ones we want to focus
+names.focal
+shrooms_vector_ss[names.focal] # vector and bracket notation to select the what you want
+
+shrooms_vector_ss_subset <- shrooms_vector_ss[names.focal] # assign the subset of sequences
+
+# MSA with just this subset.
+shrooms_align_subset <- msa(shrooms_vector_ss_subset,
+                     method = "ClustalW")
+# view it using ggmsa 
+class(shrooms_align_subset) <- "AAMultipleAlignment"
+shrooms_align_subset_seqinr <- msaConvert(shrooms_align_subset, type = "seqinr::alignment")
+
+# Plot 
+ggmsa::ggmsa(shrooms_align_subset,   # shrooms_align, NOT shrooms_align_seqinr
+      start = 2030, 
+      end = 2100) 
+```
+
+# Genetic distances of sequence in subset
+```{r, echo=FALSE}
+# Calculating genetic distance 
+shrooms_subset_dist <- seqinr::dist.alignment(shrooms_align_subset_seqinr, 
+                                       matrix = "identity")
+shrooms_subset_dist
+#is(shrooms_subset_dist)
+#class(shrooms_subset_dist)
+
+```
+
+```{r, echo=FALSE}
+
+# Note - not using rounded values
+tree_subset <- nj(shrooms_subset_dist)
+# plot tree
+plot.phylo(tree_subset, main="Phylogenetic Tree", 
+            type = "unrooted", 
+            use.edge.length = F)
+# add label
+mtext(text = "Shroom family gene tree - UNrooted, no branch lengths")
+
+```
+
+```{r, echo=FALSE}
+# plot tree
+plot.phylo(tree_subset, main="Phylogenetic Tree", 
+            use.edge.length = F)
+# add label
+mtext(text = "Shroom family gene tree - rooted, no branch lenths")
+
+```
+
+```{r, echo=FALSE}
+# plot tree
+plot.phylo(tree_subset, main="Phylogenetic Tree", 
+            use.edge.length = T)
+
+# add label
+mtext(text = "Shroom family gene tree - rooted, with branch lenths")
+
+```
+
+
+
