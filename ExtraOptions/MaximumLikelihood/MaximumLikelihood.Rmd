@@ -1,0 +1,85 @@
+---
+title: "MaximumLikelihood"
+output: html_document
+date: "2022-11-17"
+source: https://wiki.duke.edu/pages/viewpage.action?pageId=131172124
+chapter2.4: Inferring Phylogeny using Maximum Likelihood in R (phangorn)
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+```{r pressure, echo=FALSE}
+
+library("phangorn")
+library("ape") 
+
+## Preparing tree for Maximum likelihood
+
+#read the file into the variable 'primates'
+primates = read.phyDat("chars2.txt", format="phylip", type="DNA") 
+
+#create a distance matrix
+dm = dist.dna(as.DNAbin(primates)) 
+
+treeUPGMA = upgma(dm) #create tree                   
+treeNJ = NJ(dm) #create tree
+#  view trees
+layout(matrix(c(1,2)), height=c(1,1.25)) # plot window dimensions 
+par(mar = c(.1,.1,.1,.1))  # adjust margins
+plot(treeUPGMA, main="UPGMA", cex = 0.8)  # rooted tree on top; cex adjusts text size
+plot(treeNJ, "unrooted", main="NJ", cex = 0.5) # unrooted tree on bottom
+
+#obtain data on the parsimony score
+parsimony(treeUPGMA, primates)
+parsimony(treeNJ, primates)
+
+#find the most parsimonious tree.
+optParsUPGMA = optim.parsimony(treeUPGMA, primates)
+optParsNJ = optim.parsimony(treeNJ, primates)
+
+plot(optParsUPGMA, main="UPGMA", cex = 0.8) # rooted tree on top
+plot(optParsNJ, "unrooted", main="NJ", cex = 0.5) # unrooted tree on bottom
+
+#write.tree(optParsUPGMA, file="optParsUPGMA.nex")
+
+```
+
+## Maximum likelihood
+```{r pressure, echo=FALSE}
+#read the file into the variable 'primates'
+primates = read.phyDat("chars2.txt", format="phylip", type="DNA") 
+
+#create a distance matrix
+dm = dist.dna(as.DNAbin(primates)) 
+treeUPGMA = upgma(dm) #create tree                   
+treeNJ = NJ(dm) #create tree
+
+#compute the likelihood of the data given a phylogenetic tree and evolutionary model
+fit_treeUPGMA = pml(unroot(treeUPGMA), data=primates)
+
+fit_treeUPGMA_opt1 = optim.pml(fit_treeUPGMA)
+
+layout(matrix(c(1,2)), height=c(1,1))
+par(mar = c(.1,.1,.1,.1))
+plot(fit_treeUPGMA, main="default branches", cex = 0.8)   # top = default branch lengths
+plot(fit_treeUPGMA_opt1, main="optimized branches", cex = 0.8)   # bottom = optimized branch lengths
+AIC(fit_treeUPGMA, fit_treeUPGMA_opt1)
+
+fit_treeUPGMA_opt2 = optim.pml(fit_treeUPGMA, optNni=TRUE)
+layout(matrix(c(1,2)), height=c(1,1))
+plot(fit_treeUPGMA_opt1, cex = 0.8)  # top = original topology with optimized branch lengths
+plot(fit_treeUPGMA_opt2, cex = 0.8)    # bottom = optimized topology AND branch lengths
+AIC(fit_treeUPGMA_opt1, fit_treeUPGMA_opt2)
+```
+
+
