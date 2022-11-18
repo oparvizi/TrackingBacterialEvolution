@@ -1,0 +1,585 @@
+---
+title: "BEAST2"
+output: html_document
+date: "2022-11-18"
+source: (1) https://cran.r-project.org/web/packages/babette/vignettes/tutorial.html
+(2) https://cran.r-project.org/web/packages/babette/babette.pdf
+(3) https://www.r-bloggers.com/2020/01/call-beast2-for-bayesian-evolutionary-analysis-from-r/
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+#---------------------------------------------------------------------------
+#(1) https://cran.r-project.org/web/packages/babette/vignettes/tutorial.html
+#---------------------------------------------------------------------------
+```{r, echo=FALSE}
+#install.packages("babette")
+#install.packages("testthat")
+library(babette)
+
+#obtaining a path to a FASTA file
+fasta_filename <- get_babette_path("anthus_aco_sub.fas")
+library(testthat)
+expect_true(file.exists(fasta_filename))
+
+#minimal requirements to call bbt_run_from_model like this
+out <- bbt_run_from_model(fasta_filename) #Note that this code is not ran, as it would take too long. The reason this would take too long, is that the MCMC run that will be executed is set to one million states by default. To specify the MCMC options and shorten this run, the mcmc argument is used.
+
+```
+
+##inference_model and mcmc
+#----------------------------------------
+```{r, echo=FALSE}
+#get an inference model with a short MCMC, create a test inference model
+inference_model <- create_test_inference_model()
+names(inference_model)
+
+#mcmc is the inference_model argument to specify the MCMC run options:
+print(inference_model$mcmc$chain_length) #argument: > [1] 3000
+
+
+#call bbt_run_from_model in way that it will finish fast
+if (is_beast2_installed()) {
+  beast2_options <- create_beast2_options()
+  out <- bbt_run_from_model(
+    fasta_filename = fasta_filename,
+    inference_model = inference_model,
+    beast2_options = beast2_options
+  )
+  bbt_delete_temp_files(
+    inference_model = inference_model,
+    beast2_options = beast2_options
+  )
+}
+
+#The return value, out contains the results of the MCMC run. For this tutorial, visualizing out is ignored, as the ‘Demo’ vignette discusses this. Instead, we will work through the other bbt_run_from_model parameters.
+```
+##site_model
+#----------------------------------------
+```{r, echo=FALSE}
+#Picking a site model. Simplest site model is the Jukes-Cantor DNA substitution model.
+inference_model <- create_test_inference_model(
+  site_model = create_jc69_site_model()
+)
+#Using this site model:
+if (is_beast2_installed()) {
+  beast2_options <- create_beast2_options()
+  out <- bbt_run_from_model(
+    fasta_filename = fasta_filename,
+    inference_model = inference_model,
+    beast2_options = beast2_options
+  )
+  bbt_delete_temp_files(
+    inference_model = inference_model,
+    beast2_options = beast2_options
+  )
+}
+#> [1] TRUE
+
+```
+
+##clock_model
+#----------------------------------------
+```{r, echo=FALSE}
+#The simplest site model is the strict clock model. 
+inference_model <- create_test_inference_model(
+  clock_model = create_strict_clock_model()
+)
+#Using this clock model:
+if (is_beast2_installed()) {
+  beast2_options <- create_beast2_options()
+  out <- bbt_run_from_model(
+    fasta_filename = fasta_filename,
+    inference_model = inference_model,
+    beast2_options = beast2_options
+  )
+  bbt_delete_temp_files(
+    inference_model = inference_model,
+    beast2_options = beast2_options
+  )
+}
+#> [1] TRUE
+```
+
+##tree_prior
+#----------------------------------------
+```{r, echo=FALSE}
+#The simplest tree prior is the Yule (pure-birth) tree prior. 
+inference_model <- create_test_inference_model(
+  tree_prior = create_yule_tree_prior()
+)
+#Using this tree prior:
+if (is_beast2_installed()) {
+  beast2_options <- create_beast2_options()
+  out <- bbt_run_from_model(
+    fasta_filename = fasta_filename,
+    inference_model = inference_model,
+    beast2_options = beast2_options
+  )
+  bbt_delete_temp_files(
+    inference_model = inference_model,
+    beast2_options = beast2_options
+  )
+}
+#> [1] TRUE
+```
+
+##mrca_prior
+#----------------------------------------
+```{r, echo=FALSE}
+#how to specify that the first two taxa in a FASTA file are sister species
+mrca_prior <- create_mrca_prior(
+  alignment_id = get_alignment_id(fasta_filename = fasta_filename),
+  taxa_names = get_taxa_names(filename = fasta_filename)[1:2],
+  is_monophyletic = TRUE
+)
+
+#assume the crown age to follow a normal distribution
+mrca_distr <- create_normal_distr(
+  mean = 15.0,
+  sigma = 1.0
+)
+
+#To use that distribution in our MRCA prior:
+mrca_prior <- create_mrca_prior(
+  alignment_id = get_alignment_id(fasta_filename = fasta_filename),
+  taxa_names = get_taxa_names(filename = fasta_filename),
+  mrca_distr = mrca_distr
+)
+
+#Using such an MRCA prior:
+inference_model <- create_test_inference_model(
+  mrca_prior = mrca_prior
+)
+if (is_beast2_installed()) {
+  beast2_options <- create_beast2_options()
+  out <- bbt_run_from_model(
+    fasta_filename = fasta_filename,
+    inference_model = inference_model,
+    beast2_options = beast2_options
+  )
+  bbt_delete_temp_files(
+    inference_model = inference_model,
+    beast2_options = beast2_options
+  )
+}
+#> [1] TRUE
+```
+
+#---------------------------------------------------------------------------
+#Package ‘babette’: (2) https://cran.r-project.org/web/packages/babette/babette.pdf 
+#---------------------------------------------------------------------------
+
+### Use bbt_self_test to do verify babette is installed correctly.
+```{r, echo=FALSE}
+#These are packages associated with ’babette’:
+# ’beautier’ creates ’BEAST2’ input files.
+# ’beastier’ runs ’BEAST2’.
+# ’mauricer’ does ’BEAST2’ package management.
+# ’tracerer’ parses ’BEAST2’ output files.
+
+if (beautier::is_on_ci() && is_beast2_installed()) {
+beastier::remove_beaustier_folders()
+beastier::check_empty_beaustier_folders()
+inference_model <- create_test_inference_model()
+beast2_options <- create_beast2_options()
+bbt_run_from_model(fasta_filename = get_babette_path("anthus_aco.fas"), inference_model = inference_model, beast2_options = beast2_options)
+# Clean up temporary files created by babette
+bbt_delete_temp_files(inference_model = inference_model, beast2_options = beast2_options)
+beastier::remove_beaustier_folders()
+beastier::check_empty_beaustier_folders()
+}
+beastier::remove_beaustier_folders()
+
+```
+
+## Continue a BEAST2 run
+```{r, echo=FALSE}
+if (beautier::is_on_ci() && is_beast2_installed()) {
+beastier::remove_beaustier_folders()
+beastier::check_empty_beaustier_folders()
+# A simple FASTA file
+fasta_filename <- beautier::get_beautier_path("test_output_0.fas")
+# Simple short inference
+inference_model <- create_test_inference_model()
+# Default BEAST2 options
+beast2_options <- create_beast2_options()
+bbt_run_from_model(
+  fasta_filename = fasta_filename,
+  inference_model = inference_model,
+  beast2_options = beast2_options
+  )
+bbt_continue(
+  fasta_filename = fasta_filename,
+  inference_model = inference_model,
+  beast2_options = beast2_options
+  )
+# Cleanup
+bbt_delete_temp_files(
+inference_model = inference_model,
+beast2_options = beast2_options
+)
+beastier::remove_beaustier_folders()
+beastier::check_empty_beaustier_folders()
+}
+
+```
+
+## Delete all the temporary files created by bbt_run_from_model
+```{r, echo=FALSE}
+if (beautier::is_on_ci() && is_beast2_installed()) {
+beastier::remove_beaustier_folders()
+beastier::check_empty_beaustier_folders()
+# Do a minimal run
+inference_model <- create_test_inference_model()
+beast2_options <- create_beast2_options()
+bbt_run_from_model(
+  fasta_filename = get_fasta_filename(),
+  inference_model = inference_model,
+  beast2_options = beast2_options
+  )
+# Cleanup
+bbt_delete_temp_files(
+  inference_model = inference_model,
+  beast2_options = beast2_options
+  )
+beastier::remove_beaustier_folders()
+beastier::check_empty_beaustier_folders()
+}
+```
+
+## Continue a BEAST2 run
+```{r, echo=FALSE}
+if (beautier::is_on_ci() && is_beast2_installed()) {
+beastier::remove_beaustier_folders()
+beastier::check_empty_beaustier_folders()
+# A simple FASTA file
+fasta_filename <- beautier::get_beautier_path("test_output_0.fas")
+# Simple short inference
+inference_model <- create_test_inference_model()
+# Default BEAST2 options
+beast2_options <- create_beast2_options()
+bbt_run_from_model(
+  fasta_filename = fasta_filename, 
+  inference_model = inference_model, 
+  beast2_options = beast2_options
+  )
+bbt_continue(
+  fasta_filename = fasta_filename, 
+  inference_model = inference_model, 
+  beast2_options = beast2_options
+  )
+# Cleanup
+bbt_delete_temp_files(
+  inference_model = inference_model, 
+  beast2_options = beast2_options 
+  )
+beastier::remove_beaustier_folders()
+beastier::check_empty_beaustier_folders()
+}
+```
+
+## Delete all the temporary files created by bbt_run_from_model
+```{r, echo=FALSE}
+if (beautier::is_on_ci() && is_beast2_installed()) {
+beastier::remove_beaustier_folders()
+beastier::check_empty_beaustier_folders()
+# Do a minimal run
+inference_model <- create_test_inference_model()
+beast2_options <- create_beast2_options()
+bbt_run_from_model(
+  fasta_filename = get_fasta_filename(), 
+  inference_model = inference_model, 
+  beast2_options = beast2_options)
+# Cleanup
+bbt_delete_temp_files(
+  inference_model = inference_model, 
+  beast2_options = beast2_options
+  )
+beastier::remove_beaustier_folders()
+beastier::check_empty_beaustier_folders()
+}
+```
+
+## Run BEAST2: bbt_run
+```{r, echo=FALSE}
+if (beautier::is_on_ci() && is_beast2_installed()) {
+beastier::remove_beaustier_folders()
+beastier::check_empty_beaustier_folders()
+# Setup for a short run
+mcmc <- create_test_mcmc()
+# Store filenames for cleanup.
+# Note that 'bbt_run_from_model allows for easier cleanup
+mcmc$tracelog$filename <- tempfile()
+mcmc$treelog$filename <- tempfile()
+mcmc$screenlog$filename <- tempfile()
+beast2_input_filename <- tempfile()
+beast2_output_state_filename <- tempfile()
+bbt_run(
+fasta_filename = get_babette_path("anthus_aco.fas"),
+beast2_input_filename = beast2_input_filename,
+beast2_output_state_filename = beast2_output_state_filename,
+mcmc = mcmc
+)
+# Cleanup
+# Again, note that 'bbt_run_from_model allows for easier cleanup
+file.remove(mcmc$tracelog$filename)
+file.remove(mcmc$treelog$filename)
+file.remove(mcmc$screenlog$filename)
+file.remove(beast2_input_filename)
+file.remove(beast2_output_state_filename)
+beastier::remove_beaustier_folders()
+beastier::check_empty_beaustier_folders()
+}
+```
+## Run BEAST2: bbt_run_from_model
+```{r, echo=FALSE}
+if (beautier::is_on_ci() && is_beast2_installed()) {
+beastier::remove_beaustier_folders()
+beastier::check_empty_beaustier_folders()
+# Simple short inference
+inference_model <- create_test_inference_model()
+# Default BEAST2 options
+beast2_options <- create_beast2_options()
+bbt_run_from_model(
+fasta_filename = get_babette_path("anthus_aco.fas"),
+inference_model = inference_model,
+beast2_options = beast2_options
+)
+# Cleanup
+bbt_delete_temp_files(
+inference_model = inference_model,
+beast2_options = beast2_options
+)
+beastier::remove_beaustier_folders()
+beastier::check_empty_beaustier_folders()
+}
+```
+
+##Do a self test to verify babette that works correctly.-------
+```{r, echo=FALSE}
+if (beautier::is_on_ci() && is_beast2_installed()) {
+beastier::remove_beaustier_folders()
+beastier::check_empty_beaustier_folders()
+bbt_self_test()
+beastier::remove_beaustier_folders()
+beastier::check_empty_beaustier_folders()
+}
+```
+
+## Checks if bbt_run has the ’BEAST2’ packages needed to process its
+arguments. Will stop if not.
+```{r, echo=FALSE}
+if (beautier::is_on_ci() && is_beast2_installed()) {
+beastier::remove_beaustier_folders()
+beastier::check_empty_beaustier_folders()
+# Minimal BEAST2 setup
+check_beast2_pkgs(mcmc = create_mcmc())
+# BEAST2 with NS package installed
+if (is_beast2_ns_pkg_installed()) {
+check_beast2_pkgs(mcmc = create_ns_mcmc())
+}
+beastier::remove_beaustier_folders()
+beastier::check_empty_beaustier_folders()
+}
+```
+
+## Get an example output of bbt_run or bbt_run_from_model.
+#-------------------------------------------------------------------------------
+```{r, echo=FALSE}
+beastier::remove_beaustier_folders()
+beastier::check_empty_beaustier_folders()
+create_test_bbt_run_output()
+beastier::remove_beaustier_folders()
+beastier::check_empty_beaustier_folders()
+```
+## Create NS testing output
+#-------------------------------------------------------------------------------
+```{r, echo=FALSE}
+beastier::remove_beaustier_folders()
+beastier::check_empty_beaustier_folders()
+create_test_ns_output()
+beastier::remove_beaustier_folders()
+beastier::check_empty_beaustier_folders()
+```
+
+## default_params_doc: It is intended to inherit is parameters’documentation.
+#-------------------------------------------------------------------------------
+```{r, echo=FALSE}
+default_params_doc(
+  beast2_input_filename,
+  beast2_options,
+  beast2_output_log_filename,
+  beast2_output_state_filename,
+  beast2_output_trees_filenames,
+  beast2_path,
+  beast2_working_dir,
+  cleanup,
+  clock_model,
+  clock_models,
+  fasta_filename,
+  fasta_filenames,
+  inference_model,
+  mcmc,
+  mrca_prior,
+  mrca_priors,
+  overwrite,
+  rng_seed,
+  site_model,
+  site_models,
+  tipdates_filename,
+  tree_prior,
+  tree_priors,
+  verbose
+  )
+```
+
+## Get the alignment IDs from one or more ’BEAST2’ XML input files.
+#-------------------------------------------------------------------------------
+```{r, echo=FALSE}
+beastier::remove_beaustier_folders()
+beastier::check_empty_beaustier_folders()
+alignment_ids <- get_alignment_ids_from_xml(
+get_babette_path("anthus_2_4.xml")
+)
+beastier::remove_beaustier_folders()
+beastier::check_empty_beaustier_folders()
+```
+## Get the full path of a file in the inst/extdata folder
+#-------------------------------------------------------------------------------
+```{r, echo=FALSE}
+beastier::remove_beaustier_folders()
+beastier::check_empty_beaustier_folders()
+get_babette_path("anthus_aco.fas")
+beastier::remove_beaustier_folders()
+beastier::check_empty_beaustier_folders()
+```
+
+## Get the full paths of files in the inst/extdata folder
+#-------------------------------------------------------------------------------
+```{r, echo=FALSE}
+beastier::remove_beaustier_folders()
+beastier::check_empty_beaustier_folders()
+get_babette_paths(c("anthus_aco.fas", "anthus_nd2.fas"))
+beastier::remove_beaustier_folders()
+beastier::check_empty_beaustier_folders()
+```
+
+## Process the ’BEAST2’ output dependent on ’BEAST2’ package
+specifics
+#-------------------------------------------------------------------------------
+```{r, echo=FALSE}
+#Usage
+parse_beast2_output(out, inference_model)
+# See page 18 for more info
+```
+
+##Parse BEAST2 NS output
+#-------------------------------------------------------------------------------
+```{r, echo=FALSE}
+beastier::remove_beaustier_folders()
+beastier::check_empty_beaustier_folders()
+parse_beast2_output_to_ns(
+output = create_test_ns_output()
+)
+beastier::remove_beaustier_folders()
+beastier::check_empty_beaustier_folders()
+
+```
+
+## Draw multiple trees on top of one another
+#-------------------------------------------------------------------------------
+```{r, echo=FALSE}
+if (beautier::is_on_ci() && is_beast2_installed()) {
+  beastier::remove_beaustier_folders()
+  beastier::check_empty_beaustier_folders()
+  
+  inference_model <- create_test_inference_model()
+  beast2_options <- create_beast2_options()
+  
+  out <- bbt_run_from_model(
+    get_babette_path("anthus_aco.fas"),
+    inference_model = inference_model,
+    beast2_options = beast2_options
+    )
+  bbt_delete_temp_files(
+    inference_model = inference_model,
+    beast2_options = beast2_options
+    )
+  plot_densitree(out$anthus_aco_trees)
+  # Clean up temporary files created by babette
+  bbt_delete_temp_files(
+    inference_model = inference_model,
+    beast2_options = beast2_options
+    )
+  beastier::remove_beaustier_folders()
+  beastier::check_empty_beaustier_folders()
+  }
+```
+
+##Internal function to prepare for ’BEAST2’ creating files
+#-------------------------------------------------------------------------------
+```{r, echo=FALSE}
+# This example will fail on the CRAN
+# r-oldrel-macos-x86_64 platform
+if (rappdirs::app_dir()$os != "mac") {
+  beastier::remove_beaustier_folders()
+  beastier::check_empty_beaustier_folders()
+  # For a test inference model, the files can be prepared
+  inference_model <- create_test_inference_model()
+  beast2_options <- create_beast2_options()
+  prepare_file_creation(inference_model, beast2_options)
+  beastier::remove_beaustier_folders()
+  beastier::check_empty_beaustier_folders()
+  }
+```
+
+##Update all babette dependencies, by installing their latest versions
+#-------------------------------------------------------------------------------
+```{r, echo=FALSE}
+update_babette(upgrade = "default")
+## Not run:
+# Updates the babette dependencies without asking
+## End(Not run)
+#beastier::remove_beaustier_folders()
+```
+
+
+#---------------------------------------------------------------------------
+#(3) https://www.r-bloggers.com/2020/01/call-beast2-for-bayesian-evolutionary-analysis-from-r/
+#---------------------------------------------------------------------------
+
+```{r, echo=FALSE}
+library(babette)
+
+fasta_filename <- get_babette_path("anthus_aco_sub.fas")
+library(testthat)
+expect_true(file.exists(fasta_filename))
+
+# Check if it really exists
+stopifnot(file.exists(fasta_filename))
+
+#obtain a BEAST2 posterior with babette
+output <- bbt_run(fasta_filename)
+
+plot_densitree(
+  output$alignment_trees,
+  alpha = 0.01,
+  consensus = as.character(c(1:4)),
+  cex = 2.0,
+  scaleX = TRUE,
+  scale.bar = FALSE
+)
+```
+
