@@ -1,0 +1,227 @@
+---
+title: "Multiple Sequence Alignment"
+output: html_document
+date: "2022-11-18"
+source: https://bioconductor.org/packages/devel/bioc/vignettes/msa/inst/doc/msa.pdf
+msa: An R Package for Multiple Sequence Alignment
+Help: help("print,MsaDNAMultipleAlignment-method")
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+## installation of the msa package
+```{r, echo=FALSE}
+#if (!requireNamespace("BiocManager", quietly=TRUE))
+#install.packages("BiocManager")
+#BiocManager::install("msa")
+
+library(msa)
+```
+## Determine the LATEX package and use of all functionalities of msaPrettyPrint()
+```{r, echo=FALSE}
+system.file("tex", "texshade.sty", package="msa")
+```
+
+```{r, echo=FALSE}
+mySequenceFile <- system.file("examples", "exampleAA.fasta", package="msa")
+mySequences <- readAAStringSet(mySequenceFile)
+mySequences
+```
+
+```{r, echo=FALSE}
+myFirstAlignment <- msa(mySequences)
+myFirstAlignment
+
+print(myFirstAlignment)
+print(myFirstAlignment, showConsensus=FALSE, halfNrow=3)
+print(myFirstAlignment, show="complete")
+
+msaPrettyPrint(myFirstAlignment, output="pdf", showNames="none",
+               showLogo="none", askForOverwrite=FALSE, verbose=FALSE)
+msaPrettyPrint(myFirstAlignment, y=c(164, 213), output="asis",
+               showNames="none", showLogo="none", askForOverwrite=FALSE)
+
+```
+# MSA
+```{r, echo=FALSE}
+help("print,MsaDNAMultipleAlignment-method")
+
+myClustalWAlignment <- msa(mySequences, "ClustalW")
+myClustalWAlignment
+
+myClustalOmegaAlignment <- msa(mySequences, "ClustalOmega")
+myClustalOmegaAlignment
+
+myMuscleAlignment <- msa(mySequences, "Muscle")
+myMuscleAlignment
+
+```
+# Processing Multiple Alignments
+```{r, echo=FALSE}
+#  Methods Inherited From Biostrings
+# defining masks on sequences
+myMaskedAlignment <- myFirstAlignment
+colM <- IRanges(start=1, end=100)
+colmask(myMaskedAlignment) <- colM
+myMaskedAlignment
+# unmask the sequences
+unmasked(myMaskedAlignment)
+
+#Consensus matrices can be computed 
+conMat <- consensusMatrix(myFirstAlignment)
+dim(conMat)
+conMat[, 101:110]
+```
+
+
+# Consensus Sequences and Conservation Scores
+```{r, echo=FALSE}
+printSplitString <- function(x, width=getOption("width") - 1)
+{
+starts <- seq(from=1, to=nchar(x), by=width)
+for (i in 1:length(starts))
+cat(substr(x, starts[i], starts[i] + width - 1), "\n")
+}
+printSplitString(msaConsensusSequence(myFirstAlignment))
+
+# allows for specify an upper and a lower conservation threshold
+printSplitString(msaConsensusSequence(myFirstAlignment, type="upperlower",
+thresh=c(40, 20)))
+
+# masked rows/sequences
+printSplitString(msaConsensusSequence(myMaskedAlignment, type="upperlower",
+thresh=c(40, 20)))
+
+# computes sums of pairwise scores for a given substitution/scoring matrix
+data(BLOSUM62)
+msaConservationScore(myFirstAlignment, BLOSUM62)
+
+# consensus sequence is computed can be customized
+msaConservationScore(myFirstAlignment, BLOSUM62, gapVsGap=0,
+type="upperlower", thresh=c(40, 20))
+
+# computed from masked alignments
+msaConservationScore(myMaskedAlignment, BLOSUM62, gapVsGap=0,
+type="upperlower", thresh=c(40, 20))
+```
+
+## Interfacing to Other Packages
+```{r, echo=FALSE}
+hemoSeq <- readAAStringSet(system.file("examples/HemoglobinAA.fasta",
+                                       package="msa"))
+hemoAln <- msa(hemoSeq)
+hemoAln
+
+#---------------
+hemoAln2 <- msaConvert(hemoAln, type="seqinr::alignment")
+# compute a distance matrix
+library(seqinr)
+d <- dist.alignment(hemoAln2, "identity")
+as.matrix(d)[2:5, "HBA1_Homo_sapiens", drop=FALSE]
+
+library(ape)
+hemoTree <- nj(d)
+plot(hemoTree, main="Phylogenetic Tree of Hemoglobin Alpha Sequences")
+
+```
+# Interfacing to Other Packages
+```{r, echo=FALSE}
+#----------------
+hemoAln3 <- msaConvert(hemoAln, type="bios2mds::align")
+str(hemoAln3)
+
+#----------------
+hemoAln4 <- as(hemoAln, "BStringSet")
+hemoAln4
+```
+
+## Pretty-Printing Multiple Sequence Alignments
+```{r, echo=FALSE}
+msaPrettyPrint(myFirstAlignment, output="asis", y=c(164, 213),
+               subset=c(1:6), showNames="none", showLogo="none",
+               consensusColor="ColdHot", showLegend=FALSE,
+               askForOverwrite=FALSE
+               )
+
+msaPrettyPrint(myFirstAlignment, output="asis", y=c(164, 213),
+               subset=c(1:6), showNames="none", showLogo="top",
+               logoColors="rasmol", shadingMode="similar",
+               showLegend=FALSE, askForOverwrite=FALSE
+               )
+```
+
+## Color Shading Modes
+```{r, echo=FALSE}
+msaPrettyPrint(myFirstAlignment, output="asis", y=c(164, 213),
+               showNames="none", shadingMode="similar",
+               shadingColors="blues", showLogo="none",
+               showLegend=FALSE, askForOverwrite=FALSE
+               )
+
+msaPrettyPrint(myFirstAlignment, output="asis", y=c(164, 213),
+               showNames="none", shadingMode="functional",
+               shadingModeArg="structure",
+               askForOverwrite=FALSE
+               )
+
+```
+##  Additional Customizations
+```{r, echo=FALSE}
+msaPrettyPrint(myFirstAlignment, output="asis", y=c(164, 213),
+               subset=c(1:6), showNames="none", showLogo="none",
+               consensusColor="ColdHot", showLegend=FALSE,
+               shadingMode="similar", askForOverwrite=FALSE,
+               furtherCode=c("\\defconsensus{.}{lower}{upper}",
+                             "\\showruler{1}{top}"
+                             )
+               )
+```
+
+# Sweave or knitr Integration
+```{r, echo=FALSE}
+# Sweave code chunk
+# <<AnyChunkName,results="tex">>=
+#  msaPrettyPrint(myFirstAlignment, output="asis")
+# @
+#  same example in knitr:
+#  <<AnyChunkName,results="asis">>=
+#  msaPrettyPrint(myFirstAlignment, output="asis")
+#  @
+# Note that, for processing the resulting LATEX source document, the TEXshade package must
+#  be installed (see Section 2) and the TEXshade package must be loaded in the preamble:
+#  \usepackage{texshade}
+  
+```
+
+# Pretty-Printing Wide Alignments
+```{r, echo=FALSE}
+chunkSize <- 300 ## how much fits on one page depends on the length of
+                 ## names and the number of sequences;
+                 ## change to what suits your needs
+for (start in seq(1, ncol(aln), by=chunkSize))
+  {
+  end <- min(start + chunkSize - 1, ncol(aln))
+  alnPart <- DNAMultipleAlignment(subseq(unmasked(aln), start, end))
+  msaPrettyPrint(x=alnPart, output="pdf", subset=NULL,
+                 file=paste0("aln_", start, "-", end, ".pdf"
+                             )
+                 )
+  }
+
+```
+# Cite This Package
+```{r, echo=FALSE}
+toBibtex(citation("msa"))
+```
+
