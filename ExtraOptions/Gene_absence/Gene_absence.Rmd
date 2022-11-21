@@ -52,10 +52,10 @@ require(ggtree)
 require(treeio)
 
 ## Visualize a Tree with an Associated Matrix
-beast_file <- system.file("D:/campyR/Sweden_Campy.tree", package="ggtree")
+beast_file <- system.file("PATH/Sweden_Campy.tree", package="ggtree")
 beast_tree <- read.beast(beast_file)
 
-genotype_file <- system.file("D:/campyR/Genotype.txt", package="ggtree")
+genotype_file <- system.file("PATH/Genotype.txt", package="ggtree")
 genotype <- read.table(genotype_file, sep="\t", stringsAsFactor=F)
 colnames(genotype) <- sub("\\.$", "", colnames(genotype))
 p <- ggtree(beast_tree, mrsd="2023-01-01") + 
