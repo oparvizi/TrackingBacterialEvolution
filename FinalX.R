@@ -1,4 +1,4 @@
-#setwd("e:/campyR")
+setwd("e:/campyR")
 #if(!require(rio)) install.packages("rio", repos = "http://cran.us.r-project.org")
 #if(!require(ape)) install.packages("ape", repos = "http://cran.us.r-project.org")
 #if(!require(tidyr)) install.packages("tidyr", repos = "http://cran.us.r-project.org")
@@ -41,125 +41,91 @@ library(shiny)
 library(shinythemes)
 library(shinydashboard)
 
-##### CALCULATING
-##--------------------------------------------------------------------
-# PHYLOGENETIC TREE (NJ)
 
-##library(DECIPHER)
-##library(msa)
-##dna<- readDNAStringSet("Seqwithout.fasta") #read fasta data
-##AT <- AlignTranslation(dna, type="AAStringSet") # align the translation
-#BrowseSeqs(AT, highlight=1) # view the alignment
-#DNA <- AlignSeqs(dna) # align the sequences directly without translation
-#writeXStringSet(DNA, file="<<path to output file>>") # write the aligned sequences to a FASTA file
-##dnaAln <- msa(dna)
-##library(seqinr)
-##dnaAln2 <- msaConvert(dnaAln, type="seqinr::alignment") #convert to seqinr
-##d <- dist.alignment(dnaAln2, "identity") # calculate the distance 
-##library(ape)
-##myTree <- nj(d)
-##tree<-ggtree(myTree, right = TRUE);tree
-##saveRDS(file="./data/root.Seqwithout.RDS",ggtree(myTree))
-##saveRDS(file="./data/circ.Seqwithout.tree.RDS",ggtree(myTree,layout="circular"))
-##saveRDS(file="./data/dl.Seqwithout.tree.RDS",ggtree(myTree,layout="daylight"))
-##saveRDS(file="./data/inCirc.Seqwithout.tree.RDS",ggtree(myTree,llayout="inward_circular"))
+##### Persistent data storage methods in Shiny apps
+###--------------------------------------------------------------------
+#   https://shiny.rstudio.com/articles/persistent-data-storage.html
+
 
 # Load data------------------------------------------------------
 library(rio)
-#metadata_campy <- import("../campyR/Sweden_Campy_metadata.xlsx")
-#export(metadata_campy, "../campyR/Sweden_Campy_metadata.RDS")
+metadata_campy <- import("../campyR/Sweden_Campy_metadata.xlsx")
+saveRDS(metadata_campy, file="../campyR/Sweden_Campy_metadata.RDS")
 metadata_campy<-readRDS("../campyR/Sweden_Campy_metadata.RDS")
-#metadata_campy
+metadata_campy
+
 #Define UI-------------------------------------------------------
 require(shiny)
 require(shinydashboard)
 require(leaflet)
 require(dygraphs)
-ui<-dashboardPage(skin = "red",
-                  dashboardHeader(title = "Shiny Dashboard", titleWidth =200),
-                  dashboardSidebar(width = 200,
-                                   sidebarMenu(               
-                                     HTML(paste0(
-                                       "<br>",
-                                       "<a href='https://www.sva.se/media/cyybfdr0/sva_logo_e.svg' 
-                      target='_blank'><img style = 'display: block; margin-left: auto; 
-                      margin-right: auto;' src='../campyR/images/sva_logo_e.svg' width = '150'></a>",
-                                       "<br>",
-                                       "<p style = 'text-align: center;'><small>
-                      <a href='https://en.wikipedia.org/wiki/National_Veterinary_Institute_(Sweden)' 
-                      target='_blank'>National veterinary institute</a></small></p>",
-                                       "<br>"
-                                     )),
-                                     menuItem("Home", tabName = "home", icon = icon("home")), #href="https://www.sva.se/en/"),
-                                     menuItem( "FAQs", tabName = 'help', icon = icon('question-circle') ),
-                                     menuItem(("Tree Options"),
-                                              radioButtons(inputId="treeLayout","Layout",
-                                                           choices=c("Rectanular"="rec",
-                                                                     "Circular"="circ"),
-                                                           selected="rec")),
-                                     menuItem(("Color Options"),
-                                              radioButtons(inputId="colorBy","Color By",
-                                                           choices=c("Region"="region", 
-                                                                     "Source"="source"),
-                                                           selected="region")),
-                                     HTML(paste0(
-                                       "<table style='margin-left:auto; margin-right:auto;'>",
-                                       "<tr>",
-                                       "<td style='padding: 5px;'><a href='https://www.facebook.com/Statens.veterinarmedicinska.anstalt' target='_blank'><i class='fab fa-facebook-square fa-lg'></i></a></td>",
-                                       "<td style='padding: 5px;'><a href='https://www.linkedin.com/company/national-veterinary-institute-sweden' target='_blank'><i class='fab fa-linkedin fa-lg'></i></a></td>",
-                                       "<td style='padding: 5px;'><a href='https://twitter.com/SVAexpertmyndig' target='_blank'><i class='fab fa-twitter fa-lg'></i></a></td>",
-                                       "<td style='padding: 5px;'><a href='https://www.https://www.instagram.com/sva/' target='_blank'><i class='fab fa-instagram fa-lg'></i></a></td>",
-                                       "</tr>",
-                                       "</table>",
-                                       "<br>"),
-                                     ))                     
-                  ),
-                  dashboardBody(
-                    #tags$head(
-                    #tags$link(rel = "stylesheet", type = "text/css", href = "custom.css")
-                    #),
-                    #tabItems(
-                    #  tabItem(tabName = "home",
-                    #          # home section
-                    #          includeMarkdown("../campyR/www/home.md")
-                    #  ),      
-                    #  tabItem(tabName = "help",
-                    #          # help section
-                    #          includeMarkdown("../campyR/www/help.md")
-                    #  ),      
-                    #),
-                    box(title="Phylogenic Tree",
-                        width=6,
-                        plotOutput("treePlot",
-                                   brush = "plot_brush")
-                    ),
-                    box(title="Geographic Coordinate",
-                        leafletOutput("caseMap"),
-                        width=6),
-                    
-                    box(title="Timeline",
-                        dygraphOutput("timeline"),
-                        width=12),
-                    box(title="Presence/Absence Genes or Traits",
-                        width=12,
-                        plotlyOutput("heat")
-                    ),                    
-                  )
+ui<-  tagList(
+  tags$style("html, body{background-color: black; overflow-x: hidden; overflow-y: auto;}
+                .container{ width: 100%; heigh:auto; margin: 0 auto; padding: 0; }
+                @media screen and (min-width: 800px){
+                .container{ width: auto;}
+                }"
+     ),
+  tags$div(class="container",
+  
+  dashboardPage(skin = "red", 
+  dashboardHeader(title = "HazardRadaR", titleWidth =200),
+  #tags$head(
+  #tags$link(rel = "stylesheet", type = "text/css", href = "custom.css")
+  #),
+  dashboardSidebar(width = 200,
+    sidebarMenu(
+      HTML(paste0(
+        "<br>",
+        "<a href='https://www.sva.se/media/cyybfdr0/sva_logo_e.svg' target='_blank'><img style = 'display: block; margin-left: auto; 
+        margin-right: auto;' src='../campyR/images/sva_logo_e.svg' width = '150'></a>",
+        "<br>",
+        "<p style = 'text-align: center;'><small> <a href='https://en.wikipedia.org/wiki/National_Veterinary_Institute_(Sweden)' 
+        target='_blank'>National veterinary institute</a></small></p>",
+        "<br>"
+        )),
+        menuItem("Home", tabName = "home", icon = icon("home")), #href="https://www.sva.se/en/"),
+        menuItem( "FAQs", tabName = 'help', icon = icon('question-circle')),
+        menuItem(("Tree Types"), radioButtons(inputId="treeTypes","Types", choices=c("Neighbor-joining"="nj", "Maximum likelihood"="likeli", "Bayesian"="bayes"),
+                                              selected="nj")),
+        menuItem(("Tree Options"), radioButtons(inputId="treeLayout","Layout", choices=c("Rectanular"="rec", "Circular"="circ"), selected="rec")),
+        menuItem(("Color Options"), radioButtons(inputId="colorBy","Color By", choices=c("Region"="region", "Source"="source"), selected="region")),
+        HTML(paste0(
+          "<table style='margin-left:auto; margin-right:auto;'>",
+          "<tr>",
+          "<td style='padding: 5px;'><a href='https://www.facebook.com/Statens.veterinarmedicinska.anstalt' target='_blank'><i class='fab fa-facebook-square fa-lg'>
+          </i></a></td>",
+          "<td style='padding: 5px;'><a href='https://www.linkedin.com/company/national-veterinary-institute-sweden' target='_blank'><i class='fab fa-linkedin fa-lg'>
+          </i></a></td>",
+          "<td style='padding: 5px;'><a href='https://twitter.com/SVAexpertmyndig' target='_blank'><i class='fab fa-twitter fa-lg'></i></a></td>",
+          "<td style='padding: 5px;'><a href='https://www.https://www.instagram.com/sva/' target='_blank'><i class='fab fa-instagram fa-lg'></i></a></td>",
+          "</tr>",
+          "</table>",
+          "<br>"),
+          )
+      )                     
+  ),
+  
+  dashboardBody( 
+    #tabItems(
+    #  tabItem(tabName = "home", includeMarkdown("../campyR/www/home.md")),      
+    #  tabItem(tabName = "help", includeMarkdown("../campyR/www/help.md")),      
+    #),
+    box(title="Timeline", dygraphOutput("timeline", width = "auto", height = "120"), width=12, height=200),
+    box(title="Phylogenic Tree", width=6, height=600, plotOutput("treePlot", width = "auto", height = "500", brush = "plot_brush")),
+    box(title="Geographic Coordinate", leafletOutput("caseMap", width = "auto", height = "500"), width=6, height=600),
+    box(title="Presence/Absence Genes", width=6, height=220, plotlyOutput("heatGenes",width = "auto", height = "150")),
+    box(title="Presence/Absence Traits", width=6, height=220, plotlyOutput("heatTraits",width = "auto", height = "150")
+    ),
+  ),
+  ))
 )
 
 #Define Server---------------------------------------------------
 # This is the server logic for a Shiny web application.
-library(ape)
-library(ggtree)
-library(lubridate)
+
 library(tidyr)
 library(dplyr)
-library(ggmap)
-library(RColorBrewer)
-library(dygraphs)
-library(xts)
-library(leaflet)
-
 
 #Function and variables------------------------------------------------------
 library(RColorBrewer)
@@ -203,10 +169,108 @@ server<-function(input, output) {
       metadata_campy %>% filter(date>=startDate & date <= endDate)
     }
   })
+  
+  
+  output$treeTypes<-renderDataTable({
+    if(input$treeLayout=="nj"){
+      
+      S
+      ##### CALCULATING
+      ##--------------------------------------------------------------------
+      # PHYLOGENETIC TREE (NJ)
+      
+      library(DECIPHER)
+      library(msa)
+      dna<- readDNAStringSet("Seqwithout.fasta") #read fasta data
+      AT <- AlignTranslation(dna, type="AAStringSet") # align the translation
+      #BrowseSeqs(AT, highlight=1) # view the alignment
+      #DNA <- AlignSeqs(dna) # align the sequences directly without translation
+      #writeXStringSet(DNA, file="<<path to output file>>") # write the aligned sequences to a FASTA file
+      dnaAln <- msa(dna)
+      library(seqinr)
+      dnaAln2 <- msaConvert(dnaAln, type="seqinr::alignment") #convert to seqinr
+      d <- dist.alignment(dnaAln2, "identity") # calculate the distance 
+      library(ape)
+      myTree <- nj(d)
+      tree<-ggtree(myTree, right = TRUE);tree
+      saveRDS(file="./data/root.Shiddeneqwithout.RDS",ggtree(myTree))
+      saveRDS(file="./data/circ.Seqwithout.tree.RDS",ggtree(myTree,layout="circular"))
+      saveRDS(file="./data/dl.Seqwithout.tree.RDS",ggtree(myTree,layout="daylight"))
+      saveRDS(file="./data/inCirc.Seqwithout.tree.RDS",ggtree(myTree,llayout="inward_circular"))
+      
+    }
+    if(input$treeLayout=="likeli"){
+      
+    }else if(input$treeLayout=="bayes"){
+    }
+  })
+
+  ##### VISUALIZATIONS
+  ##--------------------------------------------------------------------
+  # TIMELINE
+  library(dygraphs)
+  library(xts)
+  output$timeline<-renderDygraph({
+    ######
+    # To create the dygraph, first generate a xts series for *each* of the countries.
+    #count cases by date, it's also aggregatge by *month* so we're going to 
+    #create a new time variable
+    if(input$colorBy=="region"){ 
+      library(xts)
+      YearMonth<-NULL
+      timeseriesData<-metadata_campy %>%
+        mutate(YearMonth=ymd(sapply(yearMonth,function(x){paste(x,"01",sep="-")}))) %>% 
+        group_by(YearMonth)%>% 
+        dplyr::count(country) %>%
+        complete(YearMonth,country) %>% #make sure that all dates are represented
+        mutate(n=replace(n,is.na(n),0)) #turn NAs from above command in zeros
+      
+      #create an xts object
+      xtsObj<-c()
+      for(i in unique(timeseriesData$country)){
+        temp<-timeseriesData %>%
+          filter(country == i)
+        xtsObj<-cbind(xtsObj,xts(temp$n, temp$YearMonth))
+      }
+      #name out object, so that it plots the time series correctly
+      colnames(xtsObj)<-unique(timeseriesData$country)
+      #now make the the dygraph (yay!)
+      dygraph(xtsObj,height=600) %>% 
+        dyOptions(stackedGraph = TRUE,colors = "#008000", pointSize = 5) %>% 
+        dyRangeSelector(height = 20, strokeColor = "") %>%
+        dyAxis("y", label = "Nr. of Isolates")
+    }else if (input$colorBy=="source"){
+      library(xts)
+      YearMonth<-NULL
+      timeseriesData<-metadata_campy %>%
+        mutate(YearMonth=ymd(sapply(yearMonth,function(x){paste(x,"01",sep="-")}))) %>% 
+        group_by(YearMonth)%>% 
+        dplyr::count(source) %>%
+        complete(YearMonth,source) %>% #make sure that all dates are represented
+        mutate(n=replace(n,is.na(n),0)) #turn NAs from above command in zeros
+      #create an xts object
+      xtsObj<-c()
+      for(i in unique(timeseriesData$source)){
+        temp<-timeseriesData %>%
+          filter(source == i)
+        xtsObj<-cbind(xtsObj,xts(temp$n, temp$YearMonth))
+      }
+      #name out object, so that it plots the time series correctly
+      colnames(xtsObj)<-unique(timeseriesData$source)
+      #now make the the dygraph (yay!)
+      dygraph(xtsObj) %>% 
+        dyOptions(stackedGraph = TRUE,colors = sourceCol$colS, pointSize = 3) %>% 
+        dyRangeSelector(height = 20, strokeColor = "") %>%
+        dyLegend(width = 400) %>%
+        dyAxis("y", label = "Source of Isolates")
+    }
+  })
   ##### VISUALIZATIONS
   ##--------------------------------------------------------------------
   # PHYLOGENETIC TREEE
-  
+  library(ape)
+  library(ggtree)
+  library(lubridate)
   output$treePlot <- renderPlot({
     # Load trees that have already been stored.
     tree<-readRDS("./data/root.Seqwithout.RDS")  # default is rooted tree
@@ -251,7 +315,8 @@ server<-function(input, output) {
   ##### VISUALIZATIONS
   ##--------------------------------------------------------------------
   # MAP THAT SHOWS CASE COUNT
-  
+  library(leaflet)
+  library(ggmap)
   output$caseMap<-renderLeaflet({
     m<-NULL
     metadata_campy<-readRDS("../campyR/Sweden_Campy_metadata.RDS")
@@ -303,64 +368,9 @@ server<-function(input, output) {
   })
   ##### VISUALIZATIONS
   ##--------------------------------------------------------------------
-  # TIMELINE
+  # HESTMAP GENES/TRAITS
   
-  output$timeline<-renderDygraph({
-    ######
-    # To create the dygraph, first generate a xts series for *each* of the countries.
-    #count cases by date, it's also aggregatge by *month* so we're going to 
-    #create a new time variable
-    if(input$colorBy=="region"){
-      library(xts)
-      YearMonth<-NULL
-      timeseriesData<-metadata_campy %>%
-        mutate(YearMonth=ymd(sapply(yearMonth,function(x){paste(x,"01",sep="-")}))) %>% 
-        group_by(YearMonth)%>% 
-        dplyr::count(country) %>%
-        complete(YearMonth,country) %>% #make sure that all dates are represented
-        mutate(n=replace(n,is.na(n),0)) #turn NAs from above command in zeros
-      
-      #create an xts object
-      xtsObj<-c()
-      for(i in unique(timeseriesData$country)){
-        temp<-timeseriesData %>%
-          filter(country == i)
-        xtsObj<-cbind(xtsObj,xts(temp$n, temp$YearMonth))
-      }
-      #name out object, so that it plots the time series correctly
-      colnames(xtsObj)<-unique(timeseriesData$country)
-      #now make the the dygraph (yay!)
-      dygraph(xtsObj,height=600) %>% 
-        dyOptions(stackedGraph = TRUE,colors = "#008000", pointSize = 5) %>% 
-        dyRangeSelector(height = 20, strokeColor = "") %>%
-        dyAxis("y", label = "Nr. of Isolates")
-    }else if (input$colorBy=="source"){
-      library(xts)
-      YearMonth<-NULL
-      timeseriesData<-metadata_campy %>%
-        mutate(YearMonth=ymd(sapply(yearMonth,function(x){paste(x,"01",sep="-")}))) %>% 
-        group_by(YearMonth)%>% 
-        dplyr::count(source) %>%
-        complete(YearMonth,source) %>% #make sure that all dates are represented
-        mutate(n=replace(n,is.na(n),0)) #turn NAs from above command in zeros
-      #create an xts object
-      xtsObj<-c()
-      for(i in unique(timeseriesData$source)){
-        temp<-timeseriesData %>%
-          filter(source == i)
-        xtsObj<-cbind(xtsObj,xts(temp$n, temp$YearMonth))
-      }
-      #name out object, so that it plots the time series correctly
-      colnames(xtsObj)<-unique(timeseriesData$source)
-      #now make the the dygraph (yay!)
-      dygraph(xtsObj,height=600) %>% 
-        dyOptions(stackedGraph = TRUE,colors = sourceCol$colS, pointSize = 3) %>% 
-        dyRangeSelector(height = 20, strokeColor = "") %>%
-        dyLegend(width = 400) %>%
-        dyAxis("y", label = "Source of Isolates")
-    }
-  })
-  output$heat <- renderPlotly({
+  output$heatGenes <- renderPlotly({
     library(shiny)
     library(heatmaply)
     library(plotly)
@@ -373,31 +383,76 @@ server<-function(input, output) {
     colnames(meta) <- gsub("\\.", " ", colnames(meta)) #;colnames(meta)
     
     # Matrix format
-    mat <- meta
-    rownames(mat) <- (mat [,1])
-    mat  <- mat  %>% dplyr::select(TetO, GyrA, srRNA_23, fluoroquinolone_genotypes_2,
-                                   macrolide_genotypes_1, macrolide_genotypes_2, tetracycline_genotypes_1, 
-                                   tetracycline_genotypes_2, tetracycline_phenotype)
-    mat  <- data.matrix(mat ); #mat 
+    mat1 <- meta
+    rownames(mat1) <- (mat1 [,1])
+    mat1  <- mat1  %>% dplyr::select(TetO, GyrA, srRNA_23)
+    mat1  <- data.matrix(mat1 ); #mat 
     
-    #heatmap(B, scale="column")
-    heatmaply(mat,
-              dendrogram = "none",
+    heatmap(mat1, scale="column")
+    heatmaply(mat1,
+              dendrogram = "row",
               xlab = "Genes", ylab = "Isolates", 
               #main = "Variation of presence/absence genes",
               scale = "none",
-              margins = c(60,100,40,20),
+              margins = c(50,0,0,10),
               grid_color = "white",
               grid_width = 0.01,
               titleX = FALSE,
               hide_colorbar = TRUE,
-              branches_lwd = 0.1,
+              branches_lwd = 0.2,
               label_names = c("Isolate:", "Genes/Trait:", "Value:"),
               fontsize_row = 7, fontsize_col = 7,
-              labCol = colnames(mat),
-              labRow = rownames(mat),
+              labCol = colnames(mat1),
+              labRow = rownames(mat1),
               heatmap_layers = theme(axis.line=element_blank()),
-              cellnote = mat,
+              cellnote = mat1,
+              scale_fill_gradient_fun = ggplot2::scale_fill_gradient2(
+                low = "grey", 
+                mid = "gold", 
+                high = "red", 
+                midpoint = 1
+              )
+    )
+    
+  })
+  output$heatTraits <- renderPlotly({
+    library(shiny)
+    library(heatmaply)
+    library(plotly)
+    # Load data 
+    metadata_campy<-readRDS("../campyR/Sweden_Campy_metadata.RDS")
+    meta<-metadata_campy %>% select(c("id","TetO", "GyrA", "srRNA_23","fluoroquinolone_genotypes_2",
+                                      "macrolide_genotypes_1","macrolide_genotypes_2","tetracycline_genotypes_1", 
+                                      "tetracycline_genotypes_2","tetracycline_phenotype"));
+    meta[is.na(meta)] <- 0
+    colnames(meta) <- gsub("\\.", " ", colnames(meta)) #;colnames(meta)
+    
+    # Matrix format
+    mat2 <- meta
+    rownames(mat2) <- (mat2 [,1])
+    mat2  <- mat2  %>% dplyr::select(fluoroquinolone_genotypes_2,
+                                     macrolide_genotypes_1, macrolide_genotypes_2, tetracycline_genotypes_1, 
+                                     tetracycline_genotypes_2, tetracycline_phenotype)
+    mat2  <- data.matrix(mat2); #mat 
+    
+    heatmap(mat2, scale="column")
+    heatmaply(mat2,
+              dendrogram = "row",
+              xlab = "Genes", ylab = "Traits", 
+              #main = "Variation of presence/absence genes",
+              scale = "none",
+              margins = c(50,0,0,10),
+              grid_color = "white",
+              grid_width = 0.01,
+              titleX = FALSE,
+              hide_colorbar = TRUE,
+              branches_lwd = 0.2,
+              label_names = c("Isolate:", "Genes/Trait:", "Value:"),
+              fontsize_row = 7, fontsize_col = 7,
+              labCol = colnames(mat2),
+              labRow = rownames(mat2),
+              heatmap_layers = theme(axis.line=element_blank()),
+              cellnote = mat2,
               scale_fill_gradient_fun = ggplot2::scale_fill_gradient2(
                 low = "grey", 
                 mid = "gold", 
