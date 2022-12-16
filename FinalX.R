@@ -49,9 +49,9 @@ library(shinydashboard)
 
 # Load data------------------------------------------------------
 library(rio)
-metadata_campy <- import("../campyR/Sweden_Campy_metadata.xlsx")
-saveRDS(metadata_campy, file="../campyR/Sweden_Campy_metadata.RDS")
-metadata_campy<-readRDS("../campyR/Sweden_Campy_metadata.RDS")
+metadata_campy <- import("Sweden_Campy_metadata.xlsx")
+saveRDS(metadata_campy, file="Sweden_Campy_metadata.RDS")
+metadata_campy<-readRDS("Sweden_Campy_metadata.RDS")
 metadata_campy
 
 #Define UI-------------------------------------------------------
@@ -78,7 +78,7 @@ ui<-  tagList(
       HTML(paste0(
         "<br>",
         "<a href='https://www.sva.se/media/cyybfdr0/sva_logo_e.svg' target='_blank'><img style = 'display: block; margin-left: auto; 
-        margin-right: auto;' src='../campyR/images/sva_logo_e.svg' width = '150'></a>",
+        margin-right: auto;' src='images/sva_logo_e.svg' width = '150'></a>",
         "<br>",
         "<p style = 'text-align: center;'><small> <a href='https://en.wikipedia.org/wiki/National_Veterinary_Institute_(Sweden)' 
         target='_blank'>National veterinary institute</a></small></p>",
@@ -108,8 +108,8 @@ ui<-  tagList(
   
   dashboardBody( 
     #tabItems(
-    #  tabItem(tabName = "home", includeMarkdown("../campyR/www/home.md")),      
-    #  tabItem(tabName = "help", includeMarkdown("../campyR/www/help.md")),      
+    #  tabItem(tabName = "home", includeMarkdown("www/home.md")),      
+    #  tabItem(tabName = "help", includeMarkdown("www/help.md")),      
     #),
     box(title="Timeline", dygraphOutput("timeline", width = "auto", height = "120"), width=12, height=200),
     box(title="Phylogenic Tree", width=6, height=600, plotOutput("treePlot", width = "auto", height = "500", brush = "plot_brush")),
@@ -319,7 +319,7 @@ server<-function(input, output) {
   library(ggmap)
   output$caseMap<-renderLeaflet({
     m<-NULL
-    metadata_campy<-readRDS("../campyR/Sweden_Campy_metadata.RDS")
+    metadata_campy<-readRDS("Sweden_Campy_metadata.RDS")
     if(input$colorBy=="region"){
       pal<-colorFactor(colorRampPalette(coul)(length(unique (metadata_campy$region))), domain = unique (metadata_campy$region)) #leaflet
       
@@ -375,7 +375,7 @@ server<-function(input, output) {
     library(heatmaply)
     library(plotly)
     # Load data 
-    metadata_campy<-readRDS("../campyR/Sweden_Campy_metadata.RDS")
+    metadata_campy<-readRDS("Sweden_Campy_metadata.RDS")
     meta<-metadata_campy %>% select(c("id","TetO", "GyrA", "srRNA_23","fluoroquinolone_genotypes_2",
                                       "macrolide_genotypes_1","macrolide_genotypes_2","tetracycline_genotypes_1", 
                                       "tetracycline_genotypes_2","tetracycline_phenotype"));
@@ -387,7 +387,8 @@ server<-function(input, output) {
     rownames(mat1) <- (mat1 [,1])
     mat1  <- mat1  %>% dplyr::select(TetO, GyrA, srRNA_23)
     mat1  <- data.matrix(mat1 ); #mat 
-   
+    
+    #heatmap(mat1, scale="column")
     heatmaply(mat1,
               dendrogram = "row",
               xlab = "Genes", ylab = "Isolates", 
@@ -419,7 +420,7 @@ server<-function(input, output) {
     library(heatmaply)
     library(plotly)
     # Load data 
-    metadata_campy<-readRDS("../campyR/Sweden_Campy_metadata.RDS")
+    metadata_campy<-readRDS("Sweden_Campy_metadata.RDS")
     meta<-metadata_campy %>% select(c("id","TetO", "GyrA", "srRNA_23","fluoroquinolone_genotypes_2",
                                       "macrolide_genotypes_1","macrolide_genotypes_2","tetracycline_genotypes_1", 
                                       "tetracycline_genotypes_2","tetracycline_phenotype"));
@@ -434,6 +435,7 @@ server<-function(input, output) {
                                      tetracycline_genotypes_2, tetracycline_phenotype)
     mat2  <- data.matrix(mat2); #mat 
     
+    #heatmap(mat2, scale="column")
     heatmaply(mat2,
               dendrogram = "row",
               xlab = "Genes", ylab = "Traits", 
