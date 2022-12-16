@@ -196,7 +196,7 @@ server<-function(input, output) {
       saveRDS(file="./data/root.Shiddeneqwithout.RDS",ggtree(myTree))
       saveRDS(file="./data/circ.Seqwithout.tree.RDS",ggtree(myTree,layout="circular"))
       saveRDS(file="./data/dl.Seqwithout.tree.RDS",ggtree(myTree,layout="daylight"))
-      saveRDS(file="./data/inCirc.Seqwithout.tree.RDS",ggtree(myTree,llayout="inward_circular"))
+      saveRDS(file="./data/inCirc.Seqwithout.tree.RDS",ggtree(myTree,layout="inward_circular"))
       
     }
     if(input$treeLayout=="likeli"){
@@ -387,8 +387,7 @@ server<-function(input, output) {
     rownames(mat1) <- (mat1 [,1])
     mat1  <- mat1  %>% dplyr::select(TetO, GyrA, srRNA_23)
     mat1  <- data.matrix(mat1 ); #mat 
-    
-    heatmap(mat1, scale="column")
+   
     heatmaply(mat1,
               dendrogram = "row",
               xlab = "Genes", ylab = "Isolates", 
@@ -435,7 +434,6 @@ server<-function(input, output) {
                                      tetracycline_genotypes_2, tetracycline_phenotype)
     mat2  <- data.matrix(mat2); #mat 
     
-    heatmap(mat2, scale="column")
     heatmaply(mat2,
               dendrogram = "row",
               xlab = "Genes", ylab = "Traits", 
