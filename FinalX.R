@@ -92,58 +92,60 @@ ui<- tagList(
   ),
   tags$div(class="container",
            
-           # HEADER ------------------------------------------------------------------ 
-           
-           dashboardPage(
-             skin = "red", 
-             dashboardHeader(
-               title = span(HTML(paste0("<p<span style='font-size:50;'>&#9763;</span>
+# HEADER ------------------------------------------------------------------ 
+  
+  dashboardPage(
+    skin = "red", 
+    dashboardHeader(
+      title = span(HTML(paste0("<p<span style='font-size:50;'>&#9763;</span>
                                <span style='font-size:35;'>HazardRadaR</span></p>")),),# "HazardRadaR"), 
-               titleWidth =200),
-             dashboardSidebar(width = 200,
-                              sidebarMenu(
-                                HTML(paste0(
-                                  "<br>",
-                                  "<img style = 'display: block; margin-left: auto;margin-right: auto;' src='./images/sva_logo_e.svg'; width = '150'; height='50';>",
-                                  "<br>",
-                                  "<p style = 'text-align: center;'><small> <a href='https://en.wikipedia.org/wiki/National_Veterinary_Institute_(Sweden)' 
+      titleWidth =200),
+    dashboardSidebar(width = 200,
+      sidebarMenu(
+        HTML(paste0(
+          "<br>",
+          "<img style = 'display: block; margin-left: auto;margin-right: auto;' src='./images/sva_logo_e.svg'; width = '150'; height='50';>",
+          "<br>",
+          "<p style = 'text-align: center;'><small> <a href='https://en.wikipedia.org/wiki/National_Veterinary_Institute_(Sweden)' 
           target='_blank'>National veterinary institute</a></small></p>",
-                                  "<br>"
-                                )),
-                                menuItem("Home", icon = icon("home"), href="https://www.sva.se/en/our-topics/research/research-projects-at-sva/foka/a-comprehensive-assessment-of-the-impact-of-campylobacter-positive-broilers-on-human-infection-from-farm-to-molecular-epidemiology/"),
-                                menuItem( "FAQs", icon = icon('question-circle'), href="https://www.sva.se/1685?culture=en-US"),
-                                menuItem(("Tree Types"), radioButtons(inputId="treeTypes","Types", choices=c("Neighbor-joining"="nj"), #, "Maximum likelihood"="likeli", "Bayesian"="bayes"),
+          "<br>"
+          )),
+          menuItem("Home", icon = icon("home"), href="https://www.sva.se/en/our-topics/research/research-projects-at-sva/foka/a-comprehensive-assessment-of-the-impact-of-campylobacter-positive-broilers-on-human-infection-from-farm-to-molecular-epidemiology/"),
+          menuItem( "FAQs", icon = icon('question-circle'), href="https://www.sva.se/1685?culture=en-US"),
+          menuItem(("Tree Types"), radioButtons(inputId="treeTypes","Types", choices=c("Neighbor-joining"="nj"), #, "Maximum likelihood"="likeli", "Bayesian"="bayes"),
                                                                       selected="nj")),
-                                menuItem(("Tree Options"), radioButtons(inputId="treeLayout","Layout", choices=c("Rectanular"="rec", "Circular"="circ"), selected="rec")),
-                                menuItem(("Color Options"), radioButtons(inputId="colorBy","Color By", choices=c("Region"="region", "Source"="source"), selected="region")),
-                                HTML(paste0(
-                                  "<table style='margin-left:auto; margin-right:auto;'>",
-                                  "<tr>",
-                                  "<td style='padding: 5px;'><a href='https://www.facebook.com/Statens.veterinarmedicinska.anstalt' target='_blank'><i class='fab fa-facebook-square fa-lg'>
-            </i></a></td>",
-                                  "<td style='padding: 5px;'><a href='https://www.linkedin.com/company/national-veterinary-institute-sweden' target='_blank'><i class='fab fa-linkedin fa-lg'>
-            </i></a></td>",
-                                  "<td style='padding: 5px;'><a href='https://twitter.com/SVAexpertmyndig' target='_blank'><i class='fab fa-twitter fa-lg'></i></a></td>",
-                                  "<td style='padding: 5px;'><a href='https://www.https://www.instagram.com/sva/' target='_blank'><i class='fab fa-instagram fa-lg'></i></a></td>",
-                                  "</tr>",
-                                  "</table>",
-                                  "<br>"),
-                                )
-                              )                     
-             ),
-             
-             dashboardBody( 
-               box(title="Timeline", dygraphOutput("timeline", width = "auto", height = "120"), width=12, height=200),
-               fluidRow(
-                 box(title="Phylogenic Tree", width=6, height=600, plotOutput("treePlot", width = "auto", height = "500")),#, brush = "plot_brush")),
-                 box(title="Geographic Coordinate", leafletOutput("caseMap", width = "auto", height = "500"), width=6, height=600),
-               ),
-               fluidRow(
-                 box(title="Presence/Absence Genes", width=6, height=220, plotlyOutput("heatGenes",width = "auto", height = "150")),
-                 box(title="Presence/Absence Traits", width=6, height=220, plotlyOutput("heatTraits",width = "auto", height = "150")),
-               ) 
-             ),
-           ))
+          menuItem(("Tree Options"), radioButtons(inputId="treeLayout","Layout", choices=c("Rectanular"="rec", "Circular"="circ"), selected="rec")),
+          menuItem(("Color Options"), radioButtons(inputId="colorBy","Color By", choices=c("Region"="region", "Source"="source"), selected="region")),
+    HTML(paste0(
+    "<table style='margin-left:auto; margin-right:auto;'>",
+      "<tr>",
+        "<td style='padding: 5px;'><a href='https://www.facebook.com/Statens.veterinarmedicinska.anstalt' target='_blank'><i class='fab fa-facebook-square fa-lg'>
+         </i></a></td>",
+         "<td style='padding: 5px;'><a href='https://www.linkedin.com/company/national-veterinary-institute-sweden' target='_blank'><i class='fab fa-linkedin fa-lg'>
+         </i></a></td>",
+         "<td style='padding: 5px;'><a href='https://twitter.com/SVAexpertmyndig' target='_blank'><i class='fab fa-twitter fa-lg'></i></a></td>",
+         "<td style='padding: 5px;'><a href='https://www.https://www.instagram.com/sva/' target='_blank'><i class='fab fa-instagram fa-lg'></i></a></td>",
+       "</tr>",
+     "</table>",
+      "<br>"),
+    )
+  )                     
+),
+
+# BODY ------------------------------------------------------------------ 
+                     
+     dashboardBody( 
+       box(title="Timeline", dygraphOutput("timeline", width = "auto", height = "120"), width=12, height=200),
+       fluidRow(
+          box(title="Phylogenic Tree", width=6, height=600, plotOutput("treePlot", width = "auto", height = "500")),#, brush = "plot_brush")),
+          box(title="Geographic Coordinate", leafletOutput("caseMap", width = "auto", height = "500"), width=6, height=600),
+       ),
+       fluidRow(
+          box(title="Presence/Absence Genes", width=6, height=220, plotlyOutput("heatGenes",width = "auto", height = "150")),
+          box(title="Presence/Absence Traits", width=6, height=220, plotlyOutput("heatTraits",width = "auto", height = "150")),
+       ) 
+     ),
+   ))
 )
 
 #Define Server---------------------------------------------------
