@@ -1,4 +1,5 @@
 setwd("e:/campyR")
+getwd()
 #if(!require(rio)) install.packages("rio", repos = "http://cran.us.r-project.org")
 #if(!require(ape)) install.packages("ape", repos = "http://cran.us.r-project.org")
 #if(!require(tidyr)) install.packages("tidyr", repos = "http://cran.us.r-project.org")
@@ -49,8 +50,8 @@ library(shinydashboard)
 
 # Load data------------------------------------------------------
 library(rio)
-metadata_campy <- import("Sweden_Campy_metadata.xlsx")
-saveRDS(metadata_campy, file="Sweden_Campy_metadata.RDS")
+#metadata_campy <- import("Sweden_Campy_metadata.xlsx")
+#saveRDS(metadata_campy, file="Sweden_Campy_metadata.RDS")
 metadata_campy<-readRDS("Sweden_Campy_metadata.RDS")
 metadata_campy
 
@@ -59,66 +60,59 @@ require(shiny)
 require(shinydashboard)
 require(leaflet)
 require(dygraphs)
-ui<-  tagList(
+ui<- tagList(
   tags$style("html, body{background-color: black; overflow-x: hidden; overflow-y: auto;}
-                .container{ width: 100%; heigh:auto; margin: 0 auto; padding: 0; }
-                @media screen and (min-width: 800px){
-                .container{ width: auto;}
-                }"
-     ),
+              .container{ width: 100%; heigh:auto; margin: 0 auto; padding: 0; }
+              @media screen and (min-width: 800px){.container{ width: auto;}}"
+  ),
   tags$div(class="container",
-  
   dashboardPage(skin = "red", 
-  dashboardHeader(title = "HazardRadaR", titleWidth =200),
-  #tags$head(
-  #tags$link(rel = "stylesheet", type = "text/css", href = "custom.css")
-  #),
-  dashboardSidebar(width = 200,
-    sidebarMenu(
-      HTML(paste0(
-        "<br>",
-        "<a href='https://www.sva.se/media/cyybfdr0/sva_logo_e.svg' target='_blank'><img style = 'display: block; margin-left: auto; 
-        margin-right: auto;' src='images/sva_logo_e.svg' width = '150'></a>",
-        "<br>",
-        "<p style = 'text-align: center;'><small> <a href='https://en.wikipedia.org/wiki/National_Veterinary_Institute_(Sweden)' 
-        target='_blank'>National veterinary institute</a></small></p>",
-        "<br>"
-        )),
-        menuItem("Home", tabName = "home", icon = icon("home")), #href="https://www.sva.se/en/"),
-        menuItem( "FAQs", tabName = 'help', icon = icon('question-circle')),
-        menuItem(("Tree Types"), radioButtons(inputId="treeTypes","Types", choices=c("Neighbor-joining"="nj", "Maximum likelihood"="likeli", "Bayesian"="bayes"),
-                                              selected="nj")),
-        menuItem(("Tree Options"), radioButtons(inputId="treeLayout","Layout", choices=c("Rectanular"="rec", "Circular"="circ"), selected="rec")),
-        menuItem(("Color Options"), radioButtons(inputId="colorBy","Color By", choices=c("Region"="region", "Source"="source"), selected="region")),
-        HTML(paste0(
-          "<table style='margin-left:auto; margin-right:auto;'>",
-          "<tr>",
-          "<td style='padding: 5px;'><a href='https://www.facebook.com/Statens.veterinarmedicinska.anstalt' target='_blank'><i class='fab fa-facebook-square fa-lg'>
-          </i></a></td>",
-          "<td style='padding: 5px;'><a href='https://www.linkedin.com/company/national-veterinary-institute-sweden' target='_blank'><i class='fab fa-linkedin fa-lg'>
-          </i></a></td>",
-          "<td style='padding: 5px;'><a href='https://twitter.com/SVAexpertmyndig' target='_blank'><i class='fab fa-twitter fa-lg'></i></a></td>",
-          "<td style='padding: 5px;'><a href='https://www.https://www.instagram.com/sva/' target='_blank'><i class='fab fa-instagram fa-lg'></i></a></td>",
-          "</tr>",
-          "</table>",
-          "<br>"),
-          )
-      )                     
-  ),
-  
-  dashboardBody( 
-    #tabItems(
-    #  tabItem(tabName = "home", includeMarkdown("www/home.md")),      
-    #  tabItem(tabName = "help", includeMarkdown("www/help.md")),      
-    #),
-    box(title="Timeline", dygraphOutput("timeline", width = "auto", height = "120"), width=12, height=200),
-    box(title="Phylogenic Tree", width=6, height=600, plotOutput("treePlot", width = "auto", height = "500", brush = "plot_brush")),
-    box(title="Geographic Coordinate", leafletOutput("caseMap", width = "auto", height = "500"), width=6, height=600),
-    box(title="Presence/Absence Genes", width=6, height=220, plotlyOutput("heatGenes",width = "auto", height = "150")),
-    box(title="Presence/Absence Traits", width=6, height=220, plotlyOutput("heatTraits",width = "auto", height = "150")
-    ),
-  ),
-  ))
+    dashboardHeader(title = "HazardRadaR", titleWidth =200),
+      dashboardSidebar(width = 200,
+        sidebarMenu(
+          HTML(paste0(
+          "<br>",
+          "<a href='https://www.sva.se/media/cyybfdr0/sva_logo_e.svg' target='_blank'><img style = 'display: block; margin-left: auto; 
+          margin-right: auto;' src='images/sva_logo_e.svg' width = '150'></a>",
+          "<br>",
+          "<p style = 'text-align: center;'><small> <a href='https://en.wikipedia.org/wiki/National_Veterinary_Institute_(Sweden)' 
+          target='_blank'>National veterinary institute</a></small></p>",
+          "<br>"
+          )),
+          menuItem("Home", tabName = "home", icon = icon("home")), #href="https://www.sva.se/en/"),
+          menuItem( "FAQs", tabName = 'help', icon = icon('question-circle')),
+          menuItem(("Tree Types"), radioButtons(inputId="treeTypes","Types", choices=c("Neighbor-joining"="nj", "Maximum likelihood"="likeli", "Bayesian"="bayes"),
+                                                                                  selected="nj")),
+          menuItem(("Tree Options"), radioButtons(inputId="treeLayout","Layout", choices=c("Rectanular"="rec", "Circular"="circ"), selected="rec")),
+          menuItem(("Color Options"), radioButtons(inputId="colorBy","Color By", choices=c("Region"="region", "Source"="source"), selected="region")),
+          HTML(paste0(
+            "<table style='margin-left:auto; margin-right:auto;'>",
+            "<tr>",
+            "<td style='padding: 5px;'><a href='https://www.facebook.com/Statens.veterinarmedicinska.anstalt' target='_blank'><i class='fab fa-facebook-square fa-lg'>
+            </i></a></td>",
+            "<td style='padding: 5px;'><a href='https://www.linkedin.com/company/national-veterinary-institute-sweden' target='_blank'><i class='fab fa-linkedin fa-lg'>
+            </i></a></td>",
+            "<td style='padding: 5px;'><a href='https://twitter.com/SVAexpertmyndig' target='_blank'><i class='fab fa-twitter fa-lg'></i></a></td>",
+            "<td style='padding: 5px;'><a href='https://www.https://www.instagram.com/sva/' target='_blank'><i class='fab fa-instagram fa-lg'></i></a></td>",
+            "</tr>",
+            "</table>",
+            "<br>"),
+            )
+       )                     
+     ),
+                         
+     dashboardBody( 
+     #tabItems(
+     #  tabItem(tabName = "home", includeMarkdown("www/home.md")),      
+     #  tabItem(tabName = "help", includeMarkdown("www/help.md")),      
+     #),
+     box(title="Timeline", dygraphOutput("timeline", width = "auto", height = "120"), width=12, height=200),
+     box(title="Phylogenic Tree", width=6, height=600, plotOutput("treePlot", width = "auto", height = "500")),#, brush = "plot_brush")),
+     box(title="Geographic Coordinate", leafletOutput("caseMap", width = "auto", height = "500"), width=6, height=600),
+     box(title="Presence/Absence Genes", width=6, height=220, plotlyOutput("heatGenes",width = "auto", height = "150")),
+     box(title="Presence/Absence Traits", width=6, height=220, plotlyOutput("heatTraits",width = "auto", height = "150")),
+     ),
+   ))
 )
 
 #Define Server---------------------------------------------------
@@ -140,16 +134,35 @@ ReSo$source<-factor(ReSo$source, levels = sourceCol$ord);ReSo$source
 
 colorTreeTip = function(tree,metadata_campy,var) {
   if(var %in% c("region")){
-    t<-tree %<+% ReSo + geom_tippoint(mapping = aes(color = region), size=5, alpha=0.35) + 
-      geom_tiplab(linetype = "dashed",align = TRUE) + #geom_text2(aes(label=tree$data$label)) +
-      theme(legend.justification = c("right", "bottom")) +#, legend.text = element_text(size = 8))
-      scale_color_manual(values=regionCol$colR, drop=FALSE,na.translate = FALSE)#;t
+ 
+    t<-tree %<+% ReSo + 
+      geom_tippoint(aes(color = region), size=5, alpha=1) + 
+      geom_point2(aes(subset=(label %in% c("79418|"))), shape=21, size=5, fill='#E66101')+
+      geom_point2(aes(subset=(label %in% c("105671|"))), shape=21, size=5, fill='#EF862B')+
+      geom_point2(aes(subset=(label %in% c("79179|","79180|"))), shape=21, size=5, fill='#F9AB55')+
+      geom_point2(aes(subset=(label %in% c("79424|","79614|","79615|"))), shape=21, size=5, fill='#E7B482')+
+      geom_point2(aes(subset=(label %in% c("79612|","105668|","110223|"))), shape=21, size=5, fill='#C7AEB2')+
+      geom_point2(aes(subset=(label %in% c("83364|","83367|"))), shape=21, size=5, fill='#A69BC9')+
+      geom_point2(aes(subset=(label %in% c("83376|","70319|","107204|","110224|"))), shape=21, size=5, fill='#826BB1')+
+      geom_point2(aes(subset=(label %in% c("70320|"," 105670|"))), shape=21, size=5, fill='#5E3C99')+
+      geom_tiplab(linetype = "dashed",linesize = 0.5, align = TRUE) + 
+      geom_treescale() +
+      theme(legend.justification = c("right", "bottom")) +
+      scale_color_manual(values=regionCol$colR, drop=FALSE)
   }
   else if(var %in% c("source")){
-    t<-tree %<+% ReSo + geom_tippoint(mapping = aes(color = source), size=5, alpha=0.35) + 
-      geom_tiplab(linetype = "dashed",align = TRUE) + 
-      theme(legend.justification = c("right", "bottom")) +#, legend.text = element_text(size = 8))
-      scale_color_manual(values=sourceCol$colS, drop=FALSE,na.translate = FALSE)#;t
+    
+    t<-tree %<+% ReSo + 
+      geom_tippoint(aes(color = source), size=5, alpha=1) +
+      geom_point2(aes(subset=(label %in% c("79418|", "105671|"))), shape=21, size=5, fill='#E66101')+
+      geom_point2(aes(subset=(label %in% c("79179|","79180|","105668|","105670|"))), shape=21, size=5, fill='#F7A24A')+
+      geom_point2(aes(subset=(label %in% c("79424|","70319|","70320|","79614|","79615|","110224|","110223|"))), shape=21, size=5, fill='#D7B19A')+
+      geom_point2(aes(subset=(label %in% c("79612|"))), shape=21, size=5, fill='#9C8FC3')+
+      geom_point2(aes(subset=(label %in% c("83364|","83367|","83376|","107204|"))), shape=21, size=5, fill='#5E3C99')+
+      geom_tiplab(linetype = "dashed",linesize = 0.5, align = TRUE) + 
+      geom_treescale() +
+      theme(legend.justification = c("right", "bottom")) +
+      scale_color_manual(values=sourceCol$colS, drop=FALSE)#;t
   }
   t + ggexpand(0.3, side = "h")
 }
@@ -169,7 +182,6 @@ server<-function(input, output) {
       metadata_campy %>% filter(date>=startDate & date <= endDate)
     }
   })
-  
   
   output$treeTypes<-renderDataTable({
     if(input$treeLayout=="nj"){
@@ -195,6 +207,8 @@ server<-function(input, output) {
       tree<-ggtree(myTree, right = TRUE);tree
       saveRDS(file="./data/root.Shiddeneqwithout.RDS",ggtree(myTree))
       saveRDS(file="./data/circ.Seqwithout.tree.RDS",ggtree(myTree,layout="circular"))
+      saveRDS(file="./data/sla.Seqwithout.tree.RDS",ggtree(myTree,layout="slanted"))
+      saveRDS(file="./data/eqA.Seqwithout.tree.RDS",ggtree(myTree,layout="equal_angle"))
       saveRDS(file="./data/dl.Seqwithout.tree.RDS",ggtree(myTree,layout="daylight"))
       saveRDS(file="./data/inCirc.Seqwithout.tree.RDS",ggtree(myTree,layout="inward_circular"))
       
@@ -204,7 +218,7 @@ server<-function(input, output) {
     }else if(input$treeLayout=="bayes"){
     }
   })
-
+  
   ##### VISUALIZATIONS
   ##--------------------------------------------------------------------
   # TIMELINE
@@ -338,7 +352,7 @@ server<-function(input, output) {
           lat= ~region_lat,
           radius=~sqrt(n)*2,
           color = ~pal(region),
-          stroke = FALSE, fillOpacity = 0.7,
+          stroke = FALSE, fillOpacity = 1,
           label=~as.character(popup),
           labelOptions = labelOptions(noHide = T)# delete the lable made noHide = F
         )
@@ -360,7 +374,7 @@ server<-function(input, output) {
           lat= ~region_lat,
           radius=~sqrt(n)*2,
           color = ~pal(source),
-          stroke = FALSE, fillOpacity = 0.7,
+          stroke = FALSE, fillOpacity = 1,
           label=~as.character(popup),
           labelOptions = labelOptions(noHide = T)# delete the lable made noHide = F
         )
@@ -407,7 +421,7 @@ server<-function(input, output) {
               heatmap_layers = theme(axis.line=element_blank()),
               cellnote = mat1,
               scale_fill_gradient_fun = ggplot2::scale_fill_gradient2(
-                low = "grey", 
+                low = "white", 
                 mid = "gold", 
                 high = "red", 
                 midpoint = 1
@@ -454,7 +468,7 @@ server<-function(input, output) {
               heatmap_layers = theme(axis.line=element_blank()),
               cellnote = mat2,
               scale_fill_gradient_fun = ggplot2::scale_fill_gradient2(
-                low = "grey", 
+                low = "white", 
                 mid = "gold", 
                 high = "red", 
                 midpoint = 1
