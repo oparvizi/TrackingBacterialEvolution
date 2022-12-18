@@ -48,6 +48,31 @@ library(shinydashboard)
 #   https://shiny.rstudio.com/articles/persistent-data-storage.html
 
 
+##### Generate Tree
+###--------------------------------------------------------------------
+#
+##library(DECIPHER)
+##library(msa)
+##dna<- readDNAStringSet("Seqwithout.fasta") #read fasta data
+##AT <- AlignTranslation(dna, type="AAStringSet") # align the translation
+#BrowseSeqs(AT, highlight=1) # view the alignment
+#DNA <- AlignSeqs(dna) # align the sequences directly without translation
+#writeXStringSet(DNA, file="<<path to output file>>") # write the aligned sequences to a FASTA file
+##dnaAln <- msa(dna)
+##library(seqinr)
+##dnaAln2 <- msaConvert(dnaAln, type="seqinr::alignment") #convert to seqinr
+##d <- dist.alignment(dnaAln2, "identity") # calculate the distance 
+##library(ape)
+##myTree <- nj(d)
+##tree<-ggtree(myTree, right = TRUE);tree
+##saveRDS(file="./data/root.Shiddeneqwithout.RDS",ggtree(myTree))
+##saveRDS(file="./data/circ.Seqwithout.tree.RDS",ggtree(myTree,layout="circular"))
+#saveRDS(file="./data/sla.Seqwithout.tree.RDS",ggtree(myTree,layout="slanted"))
+#saveRDS(file="./data/eqA.Seqwithout.tree.RDS",ggtree(myTree,layout="equal_angle"))
+#saveRDS(file="./data/dl.Seqwithout.tree.RDS",ggtree(myTree,layout="daylight"))
+#saveRDS(file="./data/inCirc.Seqwithout.tree.RDS",ggtree(myTree,layout="inward_circular"))
+
+
 # Load data------------------------------------------------------
 library(rio)
 #metadata_campy <- import("Sweden_Campy_metadata.xlsx")
@@ -66,53 +91,59 @@ ui<- tagList(
               @media screen and (min-width: 800px){.container{ width: auto;}}"
   ),
   tags$div(class="container",
-  dashboardPage(skin = "red", 
-    dashboardHeader(title = "HazardRadaR", titleWidth =200),
-      dashboardSidebar(width = 200,
-        sidebarMenu(
-          HTML(paste0(
-          "<br>",
-          "<a href='https://www.sva.se/media/cyybfdr0/sva_logo_e.svg' target='_blank'><img style = 'display: block; margin-left: auto; 
-          margin-right: auto;' src='images/sva_logo_e.svg' width = '150'></a>",
-          "<br>",
-          "<p style = 'text-align: center;'><small> <a href='https://en.wikipedia.org/wiki/National_Veterinary_Institute_(Sweden)' 
+           
+           # HEADER ------------------------------------------------------------------ 
+           
+           dashboardPage(
+             skin = "red", 
+             dashboardHeader(
+               title = span(HTML(paste0("<p<span style='font-size:50;'>&#9763;</span>
+                               <span style='font-size:35;'>HazardRadaR</span></p>")),),# "HazardRadaR"), 
+               titleWidth =200),
+             dashboardSidebar(width = 200,
+                              sidebarMenu(
+                                HTML(paste0(
+                                  "<br>",
+                                  "<img style = 'display: block; margin-left: auto;margin-right: auto;' src='./images/sva_logo_e.svg'; width = '150'; height='50';>",
+                                  "<br>",
+                                  "<p style = 'text-align: center;'><small> <a href='https://en.wikipedia.org/wiki/National_Veterinary_Institute_(Sweden)' 
           target='_blank'>National veterinary institute</a></small></p>",
-          "<br>"
-          )),
-          menuItem("Home", tabName = "home", icon = icon("home")), #href="https://www.sva.se/en/"),
-          menuItem( "FAQs", tabName = 'help', icon = icon('question-circle')),
-          menuItem(("Tree Types"), radioButtons(inputId="treeTypes","Types", choices=c("Neighbor-joining"="nj", "Maximum likelihood"="likeli", "Bayesian"="bayes"),
-                                                                                  selected="nj")),
-          menuItem(("Tree Options"), radioButtons(inputId="treeLayout","Layout", choices=c("Rectanular"="rec", "Circular"="circ"), selected="rec")),
-          menuItem(("Color Options"), radioButtons(inputId="colorBy","Color By", choices=c("Region"="region", "Source"="source"), selected="region")),
-          HTML(paste0(
-            "<table style='margin-left:auto; margin-right:auto;'>",
-            "<tr>",
-            "<td style='padding: 5px;'><a href='https://www.facebook.com/Statens.veterinarmedicinska.anstalt' target='_blank'><i class='fab fa-facebook-square fa-lg'>
+                                  "<br>"
+                                )),
+                                menuItem("Home", icon = icon("home"), href="https://www.sva.se/en/our-topics/research/research-projects-at-sva/foka/a-comprehensive-assessment-of-the-impact-of-campylobacter-positive-broilers-on-human-infection-from-farm-to-molecular-epidemiology/"),
+                                menuItem( "FAQs", icon = icon('question-circle'), href="https://www.sva.se/1685?culture=en-US"),
+                                menuItem(("Tree Types"), radioButtons(inputId="treeTypes","Types", choices=c("Neighbor-joining"="nj"), #, "Maximum likelihood"="likeli", "Bayesian"="bayes"),
+                                                                      selected="nj")),
+                                menuItem(("Tree Options"), radioButtons(inputId="treeLayout","Layout", choices=c("Rectanular"="rec", "Circular"="circ"), selected="rec")),
+                                menuItem(("Color Options"), radioButtons(inputId="colorBy","Color By", choices=c("Region"="region", "Source"="source"), selected="region")),
+                                HTML(paste0(
+                                  "<table style='margin-left:auto; margin-right:auto;'>",
+                                  "<tr>",
+                                  "<td style='padding: 5px;'><a href='https://www.facebook.com/Statens.veterinarmedicinska.anstalt' target='_blank'><i class='fab fa-facebook-square fa-lg'>
             </i></a></td>",
-            "<td style='padding: 5px;'><a href='https://www.linkedin.com/company/national-veterinary-institute-sweden' target='_blank'><i class='fab fa-linkedin fa-lg'>
+                                  "<td style='padding: 5px;'><a href='https://www.linkedin.com/company/national-veterinary-institute-sweden' target='_blank'><i class='fab fa-linkedin fa-lg'>
             </i></a></td>",
-            "<td style='padding: 5px;'><a href='https://twitter.com/SVAexpertmyndig' target='_blank'><i class='fab fa-twitter fa-lg'></i></a></td>",
-            "<td style='padding: 5px;'><a href='https://www.https://www.instagram.com/sva/' target='_blank'><i class='fab fa-instagram fa-lg'></i></a></td>",
-            "</tr>",
-            "</table>",
-            "<br>"),
-            )
-       )                     
-     ),
-                         
-     dashboardBody( 
-     #tabItems(
-     #  tabItem(tabName = "home", includeMarkdown("www/home.md")),      
-     #  tabItem(tabName = "help", includeMarkdown("www/help.md")),      
-     #),
-     box(title="Timeline", dygraphOutput("timeline", width = "auto", height = "120"), width=12, height=200),
-     box(title="Phylogenic Tree", width=6, height=600, plotOutput("treePlot", width = "auto", height = "500")),#, brush = "plot_brush")),
-     box(title="Geographic Coordinate", leafletOutput("caseMap", width = "auto", height = "500"), width=6, height=600),
-     box(title="Presence/Absence Genes", width=6, height=220, plotlyOutput("heatGenes",width = "auto", height = "150")),
-     box(title="Presence/Absence Traits", width=6, height=220, plotlyOutput("heatTraits",width = "auto", height = "150")),
-     ),
-   ))
+                                  "<td style='padding: 5px;'><a href='https://twitter.com/SVAexpertmyndig' target='_blank'><i class='fab fa-twitter fa-lg'></i></a></td>",
+                                  "<td style='padding: 5px;'><a href='https://www.https://www.instagram.com/sva/' target='_blank'><i class='fab fa-instagram fa-lg'></i></a></td>",
+                                  "</tr>",
+                                  "</table>",
+                                  "<br>"),
+                                )
+                              )                     
+             ),
+             
+             dashboardBody( 
+               box(title="Timeline", dygraphOutput("timeline", width = "auto", height = "120"), width=12, height=200),
+               fluidRow(
+                 box(title="Phylogenic Tree", width=6, height=600, plotOutput("treePlot", width = "auto", height = "500")),#, brush = "plot_brush")),
+                 box(title="Geographic Coordinate", leafletOutput("caseMap", width = "auto", height = "500"), width=6, height=600),
+               ),
+               fluidRow(
+                 box(title="Presence/Absence Genes", width=6, height=220, plotlyOutput("heatGenes",width = "auto", height = "150")),
+                 box(title="Presence/Absence Traits", width=6, height=220, plotlyOutput("heatTraits",width = "auto", height = "150")),
+               ) 
+             ),
+           ))
 )
 
 #Define Server---------------------------------------------------
@@ -134,7 +165,7 @@ ReSo$source<-factor(ReSo$source, levels = sourceCol$ord);ReSo$source
 
 colorTreeTip = function(tree,metadata_campy,var) {
   if(var %in% c("region")){
- 
+    
     t<-tree %<+% ReSo + 
       geom_tippoint(aes(color = region), size=5, alpha=1) + 
       geom_point2(aes(subset=(label %in% c("79418|"))), shape=21, size=5, fill='#E66101')+
@@ -211,7 +242,6 @@ server<-function(input, output) {
       saveRDS(file="./data/eqA.Seqwithout.tree.RDS",ggtree(myTree,layout="equal_angle"))
       saveRDS(file="./data/dl.Seqwithout.tree.RDS",ggtree(myTree,layout="daylight"))
       saveRDS(file="./data/inCirc.Seqwithout.tree.RDS",ggtree(myTree,layout="inward_circular"))
-      
     }
     if(input$treeLayout=="likeli"){
       
