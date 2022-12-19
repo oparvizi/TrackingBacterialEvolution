@@ -98,13 +98,13 @@ ui<- tagList(
     skin = "red", 
     dashboardHeader(
       title = span(HTML(paste0("<p<span style='font-size:50;'>&#9763;</span>
-                               <span style='font-size:35;'>HazardRadaR</span></p>")),),# "HazardRadaR"), 
+                               <span style='font-size:35;'>HazardRadaR</span></p>"))),# "HazardRadaR"), 
       titleWidth =200),
     dashboardSidebar(width = 200,
       sidebarMenu(
         HTML(paste0(
           "<br>",
-          "<img style = 'display: block; margin-left: auto;margin-right: auto;' src='./images/sva_logo_e.svg'; width = '150'; height='50';>",
+          "<img style = 'display: block; margin-left: auto;margin-right: auto;' src='https://www.sva.se/media/cyybfdr0/sva_logo_e.svg'; width = '150'; height='50';>",
           "<br>",
           "<p style = 'text-align: center;'><small> <a href='https://en.wikipedia.org/wiki/National_Veterinary_Institute_(Sweden)' 
           target='_blank'>National veterinary institute</a></small></p>",
