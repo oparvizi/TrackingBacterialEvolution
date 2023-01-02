@@ -1,4 +1,4 @@
-setwd("e:/campyR");getwd()
+#setwd("e:/campyR");getwd()
 #if(!require(rio)) install.packages("rio", repos = "http://cran.us.r-project.org")
 #if(!require(ape)) install.packages("ape", repos = "http://cran.us.r-project.org")
 #if(!require(tidyr)) install.packages("tidyr", repos = "http://cran.us.r-project.org")
