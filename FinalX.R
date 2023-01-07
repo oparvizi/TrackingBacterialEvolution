@@ -1,4 +1,4 @@
-#setwd("e:/campyR");getwd()
+#setwd("E:/campyR");getwd()
 #if(!require(rio)) install.packages("rio", repos = "http://cran.us.r-project.org")
 #if(!require(ape)) install.packages("ape", repos = "http://cran.us.r-project.org")
 #if(!require(tidyr)) install.packages("tidyr", repos = "http://cran.us.r-project.org")
@@ -18,9 +18,9 @@
 #if(!require(jsonlite)) install.packages("jsonlite", repos = "http://cran.us.r-project.org")
 #if(!require(jsonlite)) install.packages("jsonlite", repos = "http://cran.us.r-project.org")
 #if(!require(dygraphs)) install.packages("dygraphs", repos = "http://cran.us.r-project.org")
-#Some additional empty commands if you need a special package---------------------------------------
-#if(!require()) install.packages("", repos = "http://cran.us.r-project.org")
-#if(!require()) install.packages("", repos = "http://cran.us.r-project.org")
+#if(!require(dendextend)) install.packages("dendextend", repos = "http://cran.us.r-project.org")
+#if(!require(seqinr)) install.packages("seqinr", repos = "http://cran.us.r-project.org")
+#Some additional empty commands if you need a special package
 #if(!require()) install.packages("", repos = "http://cran.us.r-project.org")
 #if(!require()) install.packages("", repos = "http://cran.us.r-project.org")
 #if(!require()) install.packages("", repos = "http://cran.us.r-project.org")
@@ -45,6 +45,8 @@
 
 library(rio)
 library(ape)
+library(Biostrings) 
+library(BiocGenerics)
 library(ggtree)
 library(ggplot2)
 library(lubridate)
@@ -57,8 +59,9 @@ library(xts)
 library(leaflet)
 library(ggtree)
 library(plotly)
-library(shiny)
 library(reactable)
+library(dendextend)
+library(shiny) 
 library(shinythemes)
 library(shinydashboard)
 
@@ -71,27 +74,48 @@ library(shinydashboard)
 ##### Generate Tree
 ###--------------------------------------------------------------------
 #
-##library(DECIPHER)
-##library(msa)
-##dna<- readDNAStringSet("Seqwithout.fasta") #read fasta data
-##AT <- AlignTranslation(dna, type="AAStringSet") # align the translation
+#obtain NJ and UPGMA
+library(DECIPHER)
+library(msa)
+fasta_file<-"Seqwithout.fasta"
+stopifnot(file.exists(fasta_file))
+dna<- readDNAStringSet(fasta_file) #read fasta data
+AT <- AlignTranslation(dna, type="AAStringSet") # align the translation
 #BrowseSeqs(AT, highlight=1) # view the alignment
 #DNA <- AlignSeqs(dna) # align the sequences directly without translation
 #writeXStringSet(DNA, file="<<path to output file>>") # write the aligned sequences to a FASTA file
-##dnaAln <- msa(dna)
-##library(seqinr)
-##dnaAln2 <- msaConvert(dnaAln, type="seqinr::alignment") #convert to seqinr
-##d <- dist.alignment(dnaAln2, "identity") # calculate the distance 
-##library(ape)
-##myTree <- nj(d)
-##tree<-ggtree(myTree, right = TRUE);tree
-##saveRDS(file="./data/root.Shiddeneqwithout.RDS",ggtree(myTree))
-##saveRDS(file="./data/circ.Seqwithout.tree.RDS",ggtree(myTree,layout="circular"))
-#saveRDS(file="./data/sla.Seqwithout.tree.RDS",ggtree(myTree,layout="slanted"))
-#saveRDS(file="./data/eqA.Seqwithout.tree.RDS",ggtree(myTree,layout="equal_angle"))
-#saveRDS(file="./data/dl.Seqwithout.tree.RDS",ggtree(myTree,layout="daylight"))
-#saveRDS(file="./data/inCirc.Seqwithout.tree.RDS",ggtree(myTree,layout="inward_circular"))
+dnaAln <- msa(dna)
+library(seqinr)
+dnaAln2 <- msaConvert(dnaAln, type="seqinr::alignment") #convert to seqinr
+d <- dist.alignment(dnaAln2, "identity") # calculate the distance 
+library(ape)
+my_nj <- ape::nj(d); #tree_nj<-ggtree(my_nj, right = TRUE);tree_nj
+saveRDS(file="./data/root.nj.RDS",ggtree(my_nj))
+saveRDS(file="./data/circ.nj.tree.RDS",ggtree(my_nj,layout="circular"))
+#saveRDS(file="./data/sla.nj.tree.RDS",ggtree(my_nj,layout="slanted"))
+#saveRDS(file="./data/eqA.nj.tree.RDS",ggtree(my_nj,layout="equal_angle"))
+#saveRDS(file="./data/dl.nj.tree.RDS",ggtree(my_nj,layout="daylight"))
 
+library(phangorn)
+my_upgma <- phangorn::upgma(d); #tree_upgma<-ggtree(my_upgma, right = TRUE);tree_upgma
+saveRDS(file="./data/root.upgma.RDS",ggtree(my_upgma))
+saveRDS(file="./data/circ.upgma.tree.RDS",ggtree(my_upgma,layout="circular"))
+
+#obtain a BEAST2 posterior with babette
+#library(seqinr)
+#fasta_file2<-"Seqwithout.fasta"
+#stopifnot(file.exists(fasta_file2))
+#fasta_file2 <- read.fasta(file=fasta_file2, as.string = TRUE )
+#library(babette)
+#tree_beast <- bbt_run(fasta_file2)
+#plot_densitree(
+#  output$alignment_trees,
+#  alpha = 0.01,
+#  consensus = as.character(c(1:4)),
+#  cex = 2.0,
+#  scaleX = TRUE,
+#  scale.bar = FALSE
+#)
 
 # Load data------------------------------------------------------
 library(rio)
@@ -129,15 +153,15 @@ ui<- tagList(
           target='_blank'>National veterinary institute</a></small></p>",
                                   "<br>"
                                 )),
-                                menuItem("Home", icon = icon("home"), href="https://www.sva.se/en/our-topics/research/research-projects-at-sva/foka/a-comprehensive-assessment-of-the-impact-of-campylobacter-positive-broilers-on-human-infection-from-farm-to-molecular-epidemiology/"),
+                                menuItem(("Genomic Data Visualization"), tabName = "vision"), 
+                                menuItem(("- Tree Types"), radioButtons(inputId="treeTypes","Types", choices=c("Neighbor-joining"="nj", "UPGMA"="upgma"),#, "Bayesian"="bayes"),
+                                                                        selected="nj")),
+                                menuItem(("- Tree Options"), radioButtons(inputId="treeLayout","Layout", choices=c("Rectanular"="rec", "Circular"="circ"), selected="rec")),
+                                menuItem(("- Color Options"), radioButtons(inputId="colorBy","Color By", choices=c("Region"="region", "Source"="source"), selected="region")),
+                                
                                 menuItem("Data Query", tabName = "query", icon=icon("table") ),
                                 menuItem("Statistics & Modeling", tabName = "statistics", icon = icon("stats", lib = "glyphicon")),
-                                menuItem(("Genomic Data Visualization"), tabName = "vision"), 
-                                menuItem(("Tree Types"), radioButtons(inputId="treeTypes","Types", choices=c("Neighbor-joining"="nj"), #, "Maximum likelihood"="likeli", "Bayesian"="bayes"),
-                                                                               selected="nj")),
-                                menuItem(("Tree Options"), radioButtons(inputId="treeLayout","Layout", choices=c("Rectanular"="rec", "Circular"="circ"), selected="rec")),
-                                menuItem(("Color Options"), radioButtons(inputId="colorBy","Color By", choices=c("Region"="region", "Source"="source"), selected="region")),
-
+                                menuItem("Home", icon = icon("home"), href="https://www.sva.se/en/our-topics/research/research-projects-at-sva/foka/a-comprehensive-assessment-of-the-impact-of-campylobacter-positive-broilers-on-human-infection-from-farm-to-molecular-epidemiology/"),
                                 menuItem( "FAQs", tabName = "faqs", icon = icon('question-circle')),# href="https://www.sva.se/1685?culture=en-US"),
                                 menuItem("Releases", tabName = "releases", icon = icon("tasks")),
                                 HTML(paste0(
@@ -167,11 +191,27 @@ ui<- tagList(
              
              dashboardBody(
                tabItems(
+                 tabItem(tabName = "vision",
+                         fluidRow(
+                           box(title="Timeline", dygraphOutput("timeline", width = "auto", height = "120"), width=12, height=200),
+                         ),
+                         fluidRow(
+                           box(title="Phylogenic Tree",plotOutput("treePlot", width = "auto", height = "500"), width=6, height=600), #brush = "plot_brush"),
+                           box(title="Geographic Coordinate", leafletOutput("caseMap", width = "auto", height = "500"), width=6, height=600),
+                         ),
+                         fluidRow(
+                           box(title="Mirror Tree", plotOutput("mirror_tree",width = "auto", height = "500"), width=12, height=600),
+                         ),
+                         fluidRow(
+                           box(title="Presence/Absence Genes", plotlyOutput("heatGenes",width = "auto", height = "150"), width=6, height=220),
+                           box(title="Presence/Absence Traits", plotlyOutput("heatTraits",width = "auto", height = "150"), width=6, height=220),
+                         )
+                 ),
                  tabItem(tabName = "statistics",
                          fluidRow( 
-                           box(title="Ferequency of isolates in Region", width=6, height=500,
+                           box(title="Regions", width=6, height=500,
                                plotOutput("plot1")),# click = "plot_click")), 
-                           box(title="Ferequency of isolates in Time Period", width=6, height=500,
+                           box(title="Time Period", width=6, height=500,
                                plotOutput("plot2")),# click = "plot_click")), 
                          )
                  ),
@@ -183,19 +223,6 @@ ui<- tagList(
                          fluidRow(
                            box(title="Genomic Datasets", width=12, height=450,
                                reactableOutput("gdynamic")),#, style="overflow-x: scroll; overflow-y: scroll;"),
-                         )
-                 ),
-                 tabItem(tabName = "vision",
-                         fluidRow(
-                           box(title="Timeline", dygraphOutput("timeline", width = "auto", height = "120"), width=12, height=200),
-                         ),
-                         fluidRow(
-                           box(title="Phylogenic Tree",plotOutput("treePlot", width = "auto", height = "500"), width=6, height=600),#, brush = "plot_brush")),
-                           box(title="Geographic Coordinate", leafletOutput("caseMap", width = "auto", height = "500"), width=6, height=600),
-                         ),
-                         fluidRow(
-                           box(title="Presence/Absence Genes", plotlyOutput("heatGenes",width = "auto", height = "150"), width=6, height=220),
-                           box(title="Presence/Absence Traits", plotlyOutput("heatTraits",width = "auto", height = "150"), width=6, height=220),
                          )
                  ),
                  tabItem(tabName = "faqs",
@@ -224,6 +251,7 @@ ReSo$region<-factor(ReSo$region, levels = regionCol$ord);ReSo$region
 ReSo$source<-factor(ReSo$source, levels = sourceCol$ord);ReSo$source
 
 colorTreeTip = function(tree,metadata_campy,var) {
+  
   try(
     if(var %in% c("region")){
       
@@ -334,32 +362,52 @@ server<-function(input, output) {
   output$plot1 <- renderPlot({
     library(dplyr)
     # Count number cases per country
-    aggDat<-metadata_campy %>%
+    aggDat1<-metadata_campy %>%
       filter(country !="?") %>%
       group_by(region,region_lon,region_lat) %>%
       dplyr::count()%>%
       mutate(popup=sprintf("%s = %d cases",region,n)) #create a popup for the map
+    aggDat1
+    aggDat1$region <- as.character(aggDat1$region)
     # Here's a very quick look at what this command generates for us:
-    aggDat
-    barplot((aggDat$n~aggDat$region), horiz=TRUE, 
-            xlab = "Ferequency", ylab = "Regions",
-            cex.axis=1, cex.names=1, cex.lab=1, cex.main=1, axis.lty=1, las=1,
-            col= "darkred", col.axis="darkblue", col.main="darkblue", col.lab="darkblue"
-    )
+    library(hrbrthemes)
+    library(kableExtra)
+    options(knitr.table.format = "html")
+    # Barplot
+    aggDat1 %>%
+      filter(!is.na(n)) %>%
+      arrange(n) %>%
+      tail(20) %>%
+      mutate(region=factor(region, region)) %>%
+      ggplot( aes(x=region, y=n) ) +
+      geom_bar(stat="identity", fill="#69b3a2") +
+      coord_flip() +
+      theme_ipsum() +
+      ggtitle("Ferequency of isolates in Region")
   })
   
   output$plot2 <- renderPlot({
+    library(ggplot2)
     library(dplyr)
+    library(hrbrthemes)
     # Count number cases per country 
     aggDat2<-metadata_campy %>%
       filter(country !="?") %>%
-      group_by(year) %>%
+      group_by(date) %>%
       dplyr::count()%>%
-      mutate(popup=sprintf("%s = %d cases",year,n)) #create a popup for the map
-    # Here's a very quick look at what this command generates for us:
-    aggDat2 
-    plot(aggDat2$year, aggDat2$n, ylab="Cases", xlab="Year", col="darkred", lwd= 5) 
-    lines(lowess(x=aggDat2$year, y=aggDat2$n, f=.5))
+      mutate(popup=sprintf("%s = %d cases",date,n)) #create a popup for the map
+    aggDat2
+    aggDat2$date <- as.Date(aggDat2$date)
+    # Plot
+    aggDat2 %>%
+      tail(10) %>%
+      ggplot( aes(x=date, y=n)) +
+      geom_line( color="grey") +
+      geom_point(shape=21, color="black", fill="#69b3a2", size=6) +
+      theme_ipsum() +
+      ggtitle("Evolution of Isolate in time period")
+    #plot(aggDat2$year, aggDat2$n, ylab="Cases", xlab="Year", col="darkred", lwd= 5) 
+    #lines(lowess(x=aggDat2$year, y=aggDat2$n, f=.5))
   }) 
   
   output$vision<-renderDataTable({})
@@ -382,16 +430,19 @@ server<-function(input, output) {
       dnaAln2 <- msaConvert(dnaAln, type="seqinr::alignment") #convert to seqinr
       d <- dist.alignment(dnaAln2, "identity") # calculate the distance 
       library(ape)
-      myTree <- nj(d)
-      tree<-ggtree(myTree, right = TRUE);#tree
-      saveRDS(file="./data/root.Shiddeneqwithout.RDS",ggtree(myTree))
-      saveRDS(file="./data/circ.Seqwithout.tree.RDS",ggtree(myTree,layout="circular"))
-      saveRDS(file="./data/sla.Seqwithout.tree.RDS",ggtree(myTree,layout="slanted"))
-      saveRDS(file="./data/eqA.Seqwithout.tree.RDS",ggtree(myTree,layout="equal_angle"))
-      saveRDS(file="./data/dl.Seqwithout.tree.RDS",ggtree(myTree,layout="daylight"))
-      saveRDS(file="./data/inCirc.Seqwithout.tree.RDS",ggtree(myTree,layout="inward_circular"))
+      my_nj <- ape::nj(d); #tree1<-ggtree(my_nj, right = TRUE);#tree
+      saveRDS(file="./data/root.nj.RDS",ggtree(my_nj))
+      saveRDS(file="./data/circ.nj.tree.RDS",ggtree(my_nj,layout="circular"))
+      #saveRDS(file="./data/sla.nj.tree.RDS",ggtree(my_nj,layout="slanted"))
+      #saveRDS(file="./data/eqA.nj.tree.RDS",ggtree(my_nj,layout="equal_angle"))
+      #saveRDS(file="./data/dl.nj.tree.RDS",ggtree(my_nj,layout="daylight"))
+      #saveRDS(file="./data/inCirc.nj.tree.RDS",ggtree(my_nj,layout="inward_circular"))
     }
-    if(input$treeLayout=="likeli"){
+    if(input$treeLayout=="upgma"){
+      library(phangorn)
+      my_upgma <- phangorn::upgma  ;#tree2<-ggtree(mymy_upgma_nj, right = TRUE);#tree
+      saveRDS(file="./data/root.upgma.RDS",ggtree(my_upgma))
+      saveRDS(file="./data/circ.upgma.tree.RDS",ggtree(my_upgma,layout="circular"))
       
     }else if(input$treeLayout=="bayes"){
     }
@@ -427,10 +478,18 @@ server<-function(input, output) {
       #name out object, so that it plots the time series correctly
       colnames(xtsObj)<-unique(timeseriesData$country)
       #now make the the dygraph (yay!)
-      dygraph(xtsObj,height=600) %>% 
-        dyOptions(stackedGraph = TRUE,colors = "#008000", pointSize = 5) %>% 
+      #      dygraph(xtsObj,height=600) %>% 
+      #        dyOptions(stackedGraph = TRUE,colors = "#008000", pointSize = 5) %>% 
+      #        dyRangeSelector(height = 20, strokeColor = "") %>%
+      #        dyAxis("y", label = "Nr. of Isolates")
+      
+      dygraph(xtsObj,height=600) %>%
+        dyOptions(labelsUTC = TRUE, fillGraph=TRUE, fillAlpha=0.1, drawGrid = FALSE, colors="#D8AE5A") %>%
         dyRangeSelector(height = 20, strokeColor = "") %>%
-        dyAxis("y", label = "Nr. of Isolates")
+        dyCrosshair(direction = "vertical") %>%
+        dyHighlight(highlightCircleSize = 5, highlightSeriesBackgroundAlpha = 0.2, hideOnMouseOut = FALSE)  %>%
+        dyRoller(rollPeriod = 1)
+      
     }else if (input$colorBy=="source"){
       library(xts)
       YearMonth<-NULL
@@ -459,18 +518,29 @@ server<-function(input, output) {
   })
   ##### VISUALIZATIONS
   ##--------------------------------------------------------------------
-  # PHYLOGENETIC TREEE
+  # PHYLOGENETIC TREE
+  
   library(ape)
   library(ggtree)
   library(lubridate)
   output$treePlot <- renderPlot({
-    # Load trees that have already been stored.
-    tree<-readRDS("./data/root.Seqwithout.RDS")  # default is rooted tree
-    if(input$treeLayout=="circ"){
-      tree<-readRDS("./data/circ.Seqwithout.tree.RDS") #alternative
+    # Load trees that have already been stored.  
+    if(input$treeTypes=="nj" & input$treeLayout=="rec" ){
+      tree1<-readRDS("./data/root.nj.RDS")  # default is rooted tree
+      tree<-colorTreeTip(tree1,metadata_campy,input$colorBy)
     }
-    
-    tree<-colorTreeTip(tree,metadata_campy,input$colorBy)
+    if(input$treeTypes=="nj" & input$treeLayout=="circ"){
+      tree2<-readRDS("./data/circ.nj.tree.RDS") #alternative
+      tree<-colorTreeTip(tree2,metadata_campy,input$colorBy)
+    }
+    if(input$treeTypes=="upgma" & input$treeLayout=="rec" ){
+      tree3<-readRDS("./data/root.upgma.RDS")  #alternative
+      tree<-colorTreeTip(tree3,metadata_campy,input$colorBy)
+    }
+    if(input$treeTypes=="upgma" & input$treeLayout=="circ"){
+      tree4<-readRDS("./data/circ.upgma.tree.RDS") #alternative
+      tree<-colorTreeTip(tree4,metadata_campy,input$colorBy)
+    }
     
     #Works - but buggy brushing interaction
     if(!is.null(input$plot_brush) & input$treeLayout == "rec"){
@@ -507,6 +577,7 @@ server<-function(input, output) {
   ##### VISUALIZATIONS
   ##--------------------------------------------------------------------
   # MAP THAT SHOWS CASE COUNT
+  
   library(leaflet)
   library(ggmap)
   output$caseMap<-renderLeaflet({
@@ -514,7 +585,7 @@ server<-function(input, output) {
     metadata_campy<-readRDS("Sweden_Campy_metadata.RDS")
     if(input$colorBy=="region"){
       pal<-colorFactor(colorRampPalette(coul)(length(unique (metadata_campy$region))), domain = unique (metadata_campy$region)) #leaflet
-      
+
       aggDat<-metadataReactive() %>%
         filter(region !="?") %>%
         group_by(region,region_lon,region_lat) %>%
@@ -558,6 +629,61 @@ server<-function(input, output) {
         )
     }
   })
+
+  ##### VISUALIZATIONS
+  ##--------------------------------------------------------------------
+  # Mirror Tree  
+  
+  output$mirror_tree <- renderPlot({
+    m=NULL
+    fasta_file<-"Seqwithout.fasta"
+    stopifnot(file.exists(fasta_file))
+    dna<- readDNAStringSet(fasta_file) #read fasta data
+    AT <- AlignTranslation(dna, type="AAStringSet") # align the translation
+    #BrowseSeqs(AT, highlight=1) # view the alignment
+    #DNA <- AlignSeqs(dna) # align the sequences directly without translation
+    #writeXStringSet(DNA, file="<<path to output file>>") # write the aligned sequences to a FASTA file
+    dnaAln <- msa(dna)
+    library(seqinr)
+    dnaAln2 <- msaConvert(dnaAln, type="seqinr::alignment") #convert to seqinr
+    d <- dist.alignment(dnaAln2, "identity") # calculate the distance 
+    
+    library(dendextend)
+    #the agglomeration method to be used. This should be (an unambiguous abbreviation of) 
+    #one of "ward.D", "ward.D2", "single", "complete", "average" (= UPGMA), 
+    #"mcquitty" (= WPGMA), "median" (= WPGMC) or "centroid" (= UPGMC).
+    
+    # Make 2 dendrograms, using 2 different clustering methods
+    m_t1 <- d %>% dist() %>% hclust( method="average" ) %>% as.dendrogram()
+    m_t2 <- d %>% dist() %>% hclust( method="centroid" ) %>% as.dendrogram()
+    # Custom these kendo, and place them in a list
+    m<-max(length(m_t1),length(m_t2))
+    if(m<=9){
+      coul <- brewer.pal(9, "Set1")
+      valu<-coul[1:m]
+    }else{
+      coul <- brewer.pal(9, "Set1")
+      col<-colorRampPalette(coul)(m)
+      valu<-coul[1:m]
+    }
+      dl <- dendlist(
+        m_t1 %>% 
+          set("labels_col", value = valu, k=m) %>%
+          set("branches_lty", 1) %>%
+          set("branches_k_color", value = valu, k = m),
+        m_t2 %>% 
+          set("labels_col", value = valu, k= m) %>%
+          set("branches_lty", 1) %>%
+          set("branches_k_color", value = valu, k = m)
+      )
+    # Plot them together
+    tanglegram(dl, 
+               common_subtrees_color_lines = FALSE, highlight_distinct_edges  = TRUE, highlight_branches_lwd=FALSE, 
+               margin_inner=7,
+               lwd=2
+    )
+  })
+  
   ##### VISUALIZATIONS
   ##--------------------------------------------------------------------
   # HESTMAP GENES/TRAITS
@@ -654,7 +780,7 @@ server<-function(input, output) {
     )
     
   })
-  
+
 }
 
 #Shiny App--------------------------------------
