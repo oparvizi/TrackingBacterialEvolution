@@ -1,5 +1,8 @@
-#setwd("E:/campyR");getwd()
+#Set directory
+setwd("F:/campyR");getwd()
+#Install necessary laboratory
 #if(!require(rio)) install.packages("rio", repos = "http://cran.us.r-project.org")
+#if(!require(readxl)) install.packages("readxl", repos = "http://cran.us.r-project.org")
 #if(!require(ape)) install.packages("ape", repos = "http://cran.us.r-project.org")
 #if(!require(tidyr)) install.packages("tidyr", repos = "http://cran.us.r-project.org")
 #if(!require(dplyr)) install.packages("dplyr", repos = "http://cran.us.r-project.org")
@@ -44,6 +47,7 @@
 #install_formats() 
 
 library(rio)
+library(readxl)
 library(ape)
 library(Biostrings) 
 library(BiocGenerics)
@@ -118,9 +122,11 @@ saveRDS(file="./data/circ.upgma.tree.RDS",ggtree(my_upgma,layout="circular"))
 #)
 
 # Load data------------------------------------------------------
+#library(readxl)
 library(rio)
-#metadata_campy <- import("Sweden_Campy_metadata.xlsx")
-#saveRDS(metadata_campy, file="Sweden_Campy_metadata.RDS")
+#metadata_campy <- read_excel("Sweden_Campy_metadata.xlsx")
+metadata_campy <- import("Sweden_Campy_metadata.xlsx")
+saveRDS(metadata_campy, file="Sweden_Campy_metadata.RDS")
 metadata_campy<-readRDS("Sweden_Campy_metadata.RDS")
 metadata_campy
 
@@ -243,47 +249,115 @@ ui<- tagList(
 library(RColorBrewer)
 coul <- brewer.pal(4, "PuOr");coul
 ReSo<-metadata_campy %>% select(c("id","region","source" ));ReSo
+regio <- factor(metadata_campy$region);regio
+regiol <- levels(regio[1]);regiol
+sour <- factor(metadata_campy$source);regio
+sourl <- levels(sour[1]);sourl
 colR <- colorRampPalette(coul)(length(unique (metadata_campy$region)));colR
 colS <- colorRampPalette(coul)(length(unique (metadata_campy$source)));colS
-regionCol <- data.frame(colR,ord = unique (metadata_campy$region));regionCol
-sourceCol <- data.frame(colS,ord = unique (metadata_campy$source));sourceCol
+regionCol <- data.frame(colR,ord = regiol);regionCol
+sourceCol <- data.frame(colS,ord = sourl);sourceCol
 ReSo$region<-factor(ReSo$region, levels = regionCol$ord);ReSo$region
 ReSo$source<-factor(ReSo$source, levels = sourceCol$ord);ReSo$source
+objR1=objR2=objR3=objR4=objR5=objR6=objR7=objR8=NULL
+for (i in 1:length(metadata_campy$id)){
+  if (metadata_campy$region[i] == regiol[1]){
+    objR1[i] <- metadata_campy$id[i]
+  }
+  if (metadata_campy$region[i] == regiol[2]){
+    objR2[i] <- metadata_campy$id[i]
+  }
+  if (metadata_campy$region[i] == regiol[3]){
+    objR3[i] <- metadata_campy$id[i]
+  }
+  if (metadata_campy$region[i] == regiol[4]){
+    objR4[i] <- metadata_campy$id[i]
+  }
+  if (metadata_campy$region[i] == regiol[5]){
+    objR5[i] <- metadata_campy$id[i]
+  }  
+  if (metadata_campy$region[i] == regiol[6]){
+    objR6[i] <- metadata_campy$id[i]
+  }  
+  if (metadata_campy$region[i] == regiol[7]){
+    objR7[i] <- metadata_campy$id[i]
+  }   
+  if (metadata_campy$region[i] == regiol[8]){
+    objR8[i] <- metadata_campy$id[i]
+  } 
+  
+  x1 <- objR1[!is.na(objR1)]
+  x2 <- objR2[!is.na(objR2)]
+  x3 <- objR3[!is.na(objR3)]
+  x4 <- objR4[!is.na(objR4)]
+  x5 <- objR5[!is.na(objR5)]
+  x6 <- objR6[!is.na(objR6)]
+  x7 <- objR7[!is.na(objR7)]
+  x8 <- objR8[!is.na(objR8)]
+}
+
+objS1=objS2=objS3=objS4=objS5=NULL
+
+for (i in 1:length(metadata_campy$id)){
+  if (metadata_campy$source[i] == sourl[1]){
+    objS1[i] <- metadata_campy$id[i]
+  }
+  if (metadata_campy$source[i] == sourl[2]){
+    objS2[i] <- metadata_campy$id[i]
+  }
+  if (metadata_campy$source[i] == sourl[3]){
+    objS3[i] <- metadata_campy$id[i]
+  }
+  if (metadata_campy$source[i] == sourl[4]){
+    objS4[i] <- metadata_campy$id[i]
+  }
+  if (metadata_campy$source[i] == sourl[5]){
+    objS5[i] <- metadata_campy$id[i]
+  }  
+  
+  
+  y1 <- objS1[!is.na(objS1)]
+  y2 <- objS2[!is.na(objS2)]
+  y3 <- objS3[!is.na(objS3)]
+  y4 <- objS4[!is.na(objS4)]
+  y5 <- objS5[!is.na(objS5)]
+}
 
 colorTreeTip = function(tree,metadata_campy,var) {
-  
-  try(
-    if(var %in% c("region")){
-      
+
+  if(var %in% c("region")){
+
+    
       t<-tree %<+% ReSo + 
         geom_tippoint(aes(color = region), size=5, alpha=1) + 
-        geom_point2(aes(subset=(label %in% c("79418|"))), shape=21, size=5, fill='#E66101')+
-        geom_point2(aes(subset=(label %in% c("105671|"))), shape=21, size=5, fill='#EF862B')+
-        geom_point2(aes(subset=(label %in% c("79179|","79180|"))), shape=21, size=5, fill='#F9AB55')+
-        geom_point2(aes(subset=(label %in% c("79424|","79614|","79615|"))), shape=21, size=5, fill='#E7B482')+
-        geom_point2(aes(subset=(label %in% c("79612|","105668|","110223|"))), shape=21, size=5, fill='#C7AEB2')+
-        geom_point2(aes(subset=(label %in% c("83364|","83367|"))), shape=21, size=5, fill='#A69BC9')+
-        geom_point2(aes(subset=(label %in% c("83376|","70319|","107204|","110224|"))), shape=21, size=5, fill='#826BB1')+
-        geom_point2(aes(subset=(label %in% c("70320|"," 105670|"))), shape=21, size=5, fill='#5E3C99')+
+        geom_point2(aes(subset=(label %in% dput(as.character(x1)))), shape=21, size=5, fill='#E66101')+ # If you add more color, pay attention to the color level
+        geom_point2(aes(subset=(label %in% dput(as.character(x2)))), shape=21, size=5, fill='#EF862B')+
+        geom_point2(aes(subset=(label %in% dput(as.character(x3)))), shape=21, size=5, fill='#F9AB55')+
+        geom_point2(aes(subset=(label %in% dput(as.character(x4)))), shape=21, size=5, fill='#E7B482')+
+        geom_point2(aes(subset=(label %in% dput(as.character(x5)))), shape=21, size=5, fill='#C7AEB2')+
+        geom_point2(aes(subset=(label %in% dput(as.character(x6)))), shape=21, size=5, fill='#A69BC9')+
+        geom_point2(aes(subset=(label %in% dput(as.character(x7)))), shape=21, size=5, fill='#826BB1')+
+        geom_point2(aes(subset=(label %in% dput(as.character(x8)))), shape=21, size=5, fill='#5E3C99')+
         geom_tiplab(linetype = "dashed",linesize = 0.5, align = TRUE) + 
         geom_treescale() +
         theme(legend.justification = c("right", "bottom")) +
         scale_color_manual(values=regionCol$colR, drop=FALSE)
-    }
-    else if(var %in% c("source")){
-      
+
+  }
+  else if(var %in% c("source")){
+    
       t<-tree %<+% ReSo + 
         geom_tippoint(aes(color = source), size=5, alpha=1) +
-        geom_point2(aes(subset=(label %in% c("79418|", "105671|"))), shape=21, size=5, fill='#E66101')+
-        geom_point2(aes(subset=(label %in% c("79179|","79180|","105668|","105670|"))), shape=21, size=5, fill='#F7A24A')+
-        geom_point2(aes(subset=(label %in% c("79424|","70319|","70320|","79614|","79615|","110224|","110223|"))), shape=21, size=5, fill='#D7B19A')+
-        geom_point2(aes(subset=(label %in% c("79612|"))), shape=21, size=5, fill='#9C8FC3')+
-        geom_point2(aes(subset=(label %in% c("83364|","83367|","83376|","107204|"))), shape=21, size=5, fill='#5E3C99')+
+        geom_point2(aes(subset=(label %in% dput(as.character(y1)))), shape=21, size=5, fill='#E66101')+ 
+        geom_point2(aes(subset=(label %in% dput(as.character(y2)))), shape=21, size=5, fill='#F7A24A')+
+        geom_point2(aes(subset=(label %in% dput(as.character(y3)))), shape=21, size=5, fill='#D7B19A')+
+        geom_point2(aes(subset=(label %in% dput(as.character(y4)))), shape=21, size=5, fill='#9C8FC3')+
+        geom_point2(aes(subset=(label %in% dput(as.character(y5)))), shape=21, size=5, fill='#5E3C99')+
         geom_tiplab(linetype = "dashed",linesize = 0.5, align = TRUE) + 
         geom_treescale() +
         theme(legend.justification = c("right", "bottom")) +
         scale_color_manual(values=sourceCol$colS, drop=FALSE)#;t
-    })
+    }
   t + ggexpand(0.3, side = "h")
   
 }
@@ -692,6 +766,7 @@ server<-function(input, output) {
     library(shiny)
     library(heatmaply)
     library(plotly)
+    library(dplyr)
     # Load data 
     metadata_campy<-readRDS("Sweden_Campy_metadata.RDS")
     meta<-metadata_campy %>% select(c("id","TetO", "GyrA", "srRNA_23","fluoroquinolone_genotypes_2",
@@ -737,6 +812,7 @@ server<-function(input, output) {
     library(shiny)
     library(heatmaply)
     library(plotly)
+    library(dplyr)
     # Load data 
     metadata_campy<-readRDS("Sweden_Campy_metadata.RDS")
     meta<-metadata_campy %>% select(c("id","TetO", "GyrA", "srRNA_23","fluoroquinolone_genotypes_2",
