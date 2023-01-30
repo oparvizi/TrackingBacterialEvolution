@@ -5,5 +5,6 @@
 Analytic and visualization tools for tracking bacterial evolution in Rshiny
 
 
-<img width="839" alt="image" src="https://user-images.githubusercontent.com/105786517/211162149-ba4fb81f-0eea-49fa-8d98-6241a9c10a90.png">
+![image](https://user-images.githubusercontent.com/105786517/215443486-93642cbc-4f1f-4be4-b0d4-2514526de451.png)
+
 
